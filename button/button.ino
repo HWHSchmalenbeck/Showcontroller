@@ -87,9 +87,9 @@ void setup() {
 // Set btn color
 
 void setBtnColor(const int color[3]) {
-    digitalWrite(ledPinR, color[0]);
-    digitalWrite(ledPinG, color[1]);
-    digitalWrite(ledPinB, color[2]);
+    analogWrite(ledPinR, color[0]);
+    analogWrite(ledPinG, color[1]);
+    analogWrite(ledPinB, color[2]);
     return;
 }
 
