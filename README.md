@@ -1,2 +1,3 @@
-# hwhs-sc
-Show controller for HWHS
+# Halloween Haus Schmalenbeck - Show controller
+
+Ohhhh yeahh
