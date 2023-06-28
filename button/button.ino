@@ -10,6 +10,7 @@
     *   serialBaudRate  -> baud rate of Serial
     *   durBtnPress     -> duration to count normal button press (millis)
     *   durCrisisPress  -> duration to count crisis button press (millis)
+    *   durCrisisStop   -> duration to stop pending crisis message (millis)
     *   durPartyColor   -> duration of single color in party mode (millis)
     *   durBlinkColor   -> duration of single color in blink mode (millis)
     * 
@@ -23,8 +24,9 @@ int ledPinG = 2;
 int ledPinB = 3;
 
 int serialBaudRate = 9600;
-int durBtnPress = 100;
+int durBtnPress = 500;
 int durCrisisPress = 5000;
+int durCrisisStop = 7000;
 int durPartyColor = 400;
 int durBlinkColor = 400;
 
@@ -53,6 +55,7 @@ int partyState = 0;
 int partyMillis = 0;
 
 int pressMillis = 0;
+bool pendingCrisis = false;
 
 const int RED[3] = {255,0,0};
 const int ORANGE[3] = {255,165,0};
@@ -201,6 +204,7 @@ void loop() {
                 blinkMillis = 0;
                 curStatus = 'e';
                 setBtnColor(YELLOW);
+                pendingCrisis = false;
                 pressMillis = 0;
             
             // Party Mode
@@ -216,11 +220,16 @@ void loop() {
 
     if (digitalRead(btnPin) == HIGH && pressMillis == 0 && curStatus != 'd' && curStatus != 'e') {
         pressMillis = millis();
-        setBtnColor(GREEN);
 
     } else if (digitalRead(btnPin) == HIGH && pressMillis > 0 && curStatus != 'd' && curStatus != 'e') {
-        if (millis() - pressMillis >= durCrisisPress) {
+        if (millis() - pressMillis >= durCrisisStop && pendingCrisis == true) {
+            pendingCrisis = false;
+            setBtnColor(RED);
+        } else if (millis() - pressMillis >= durCrisisPress && pendingCrisis == false) {
+            pendingCrisis = true;
             setBtnColor(PINK);
+        } else if (millis() - pressMillis >= durBtnPress) {
+            setBtnColor(GREEN);
         }
     
     // If btn LOW and millis set, set status
@@ -228,10 +237,14 @@ void loop() {
     } else if (digitalRead(btnPin) == LOW && pressMillis > 0 && curStatus != 'd' && curStatus != 'e') {
         int dur = millis() - pressMillis;
 
-        if (dur >= durCrisisPress) {
+        if (dur >= durCrisisStop) {
+            curStatus = 'a';
+            setBtnColor(RED);
+        } else if (dur >= durCrisisPress && pendingCrisis == true) {
             curStatus = 'c';
             blinkType = 1;
             partyActive = false;
+            pendingCrisis = false;
         } else if (dur >= durBtnPress) {
             curStatus = 'b';
         }
