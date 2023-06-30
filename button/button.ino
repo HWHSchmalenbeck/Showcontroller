@@ -80,10 +80,16 @@ void setup() {
         curStatus = 'd';
         setBtnColor(ORANGE);
         blinkType = 2;
+
+        // DEBUG
+        Serial.println("Dauerhaft gedrueckt.");
     } else {
         curStatus = 'e';
         setBtnColor(YELLOW);
         blinkType = 3;
+
+        // DEBUG
+        Serial.println("Ewig nicht gedrueckt.");
     }
 }
 
@@ -101,8 +107,14 @@ void handlePartyMode() {
         partyActive = false;
         partyState = 0;
         partyMillis = 0;
+        
+        // DEBUG
+        Serial.println("Canceling party due to status.");
         return;
     }
+
+    // DEBUG
+    Serial.println("Handling party.");
 
     switch (partyState) {
         case 0:
@@ -140,22 +152,38 @@ void handlePartyMode() {
 }
 
 void handleBlink() {
+
+    // DEBUG
+    Serial.println("Handle blink.");
+
     if (blinkState == false) {
         switch (blinkType) {
             case 1:
                 setBtnColor(PINK);
+
+                // DEBUG
+                Serial.println("Blinking Pink");
                 break;
             case 2:
                 setBtnColor(ORANGE);
+
+                // DEBUG
+                Serial.println("Blinking Orange");
                 break;
             case 3:
                 setBtnColor(YELLOW);
+
+                // DEBUG
+                Serial.println("Blinking Yellow");
                 break;
         }
         blinkState = true;
     } else {
         setBtnColor(BLACK);
         blinkState = false;
+
+        // DEBUG
+        Serial.println("Blinking Black");
     }
     return;
 }
@@ -166,18 +194,28 @@ void loop() {
     if (blinkType != 0 && millis() - blinkMillis >= durBlinkColor && partyActive == false) {
         handleBlink();
         blinkMillis = millis();
+
+        // DEBUG
+        Serial.println("Running blink");
     }
 
     // If party mode active
     if (partyActive == true && millis() - partyMillis >= durPartyColor) {
         handlePartyMode();
         partyMillis = millis();
+
+        // DEBUG
+        Serial.println("Running party");
     }
 
     // Serial feedback
     if (Serial.available()) {
+        delay(20);
         char readid = Serial.read();
         char readinst = Serial.read();
+
+        // DEBUG
+        Serial.println("Got id " + String(readid) + " with instruction " + String(readinst));
 
         if (readid == btnId || readid == 'Y') {
 
@@ -189,6 +227,10 @@ void loop() {
             // Crisis mode
 
             } else if (readinst == 'c') {
+
+                // DEBUG
+                Serial.println("Enabling crisis due to Serial");
+
                 blinkType = 1;
                 blinkMillis = 0;
                 partyActive = false;
@@ -197,6 +239,10 @@ void loop() {
             // RESET
 
             } else if (readinst == 'r') {
+
+                // DEBUG
+                Serial.println("Resetting due to Serial");
+
                 partyActive = false;
                 partyMillis = 0;
                 blinkType = 3;
@@ -210,6 +256,10 @@ void loop() {
             // Party Mode
 
             } else if (readinst == 'p') {
+
+                // DEBUG
+                Serial.println("Enabling party due to Serial");
+
                 partyActive = true;
                 partyMillis = millis();
             }
@@ -219,16 +269,32 @@ void loop() {
     // If btn HIGH set start count millis
 
     if (digitalRead(btnPin) == HIGH && pressMillis == 0 && curStatus != 'd' && curStatus != 'e') {
+        
+        // DEBUG
+        Serial.println("Button HIGH non e");
+
         pressMillis = millis();
 
     } else if (digitalRead(btnPin) == HIGH && pressMillis > 0 && curStatus != 'd' && curStatus != 'e') {
         if (millis() - pressMillis >= durCrisisStop && pendingCrisis == true) {
+
+            // DEBUG
+            Serial.println("Crisis stop button press color");
+
             pendingCrisis = false;
             setBtnColor(RED);
         } else if (millis() - pressMillis >= durCrisisPress && pendingCrisis == false) {
+
+            // DEBUG
+            Serial.println("Crisis button press color");
+
             pendingCrisis = true;
             setBtnColor(PINK);
         } else if (millis() - pressMillis >= durBtnPress) {
+
+            // DEBUG
+            Serial.println("Normal button press color");
+
             setBtnColor(GREEN);
         }
     
@@ -237,21 +303,40 @@ void loop() {
     } else if (digitalRead(btnPin) == LOW && pressMillis > 0 && curStatus != 'd' && curStatus != 'e') {
         int dur = millis() - pressMillis;
 
+        // DEBUG
+        Serial.println("Button LOW; Dur: " + String(dur));
+
         if (dur >= durCrisisStop) {
+
+            // DEBUG
+            Serial.println("Running crisis stop due to btnpress");
+
             curStatus = 'a';
             setBtnColor(RED);
         } else if (dur >= durCrisisPress && pendingCrisis == true) {
+
+            // DEBUG
+            Serial.println("Running crisis due to btnpress");
+
             curStatus = 'c';
             blinkType = 1;
             partyActive = false;
             pendingCrisis = false;
         } else if (dur >= durBtnPress) {
+
+            // DEBUG
+            Serial.println("Running normal button press due to btnpress");
+
             curStatus = 'b';
         }
 
     // If btn HIGH and status 'e' then set status 'a'
 
     } else if (digitalRead(btnPin) == HIGH && curStatus == 'e') {
+
+        // DEBUG
+        Serial.println("Running first time btnpress with e");
+        
         curStatus = 'a';
         blinkType = 0;
         setBtnColor(RED);
