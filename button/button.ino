@@ -1,3 +1,4 @@
+#include <SoftwareSerial.h>
 /*
     *
     *   Config
@@ -7,6 +8,7 @@
     *   ledPinR         -> digitalPin (PWR) connect to the red Anode of the LED
     *   ledPinG         -> digitalPin (PWR) connect to the green Anode of the LED
     *   ledPinB         -> digitalPin (PWR) connect to the blue Anode of the LED
+    *   debugSerialBR   -> baud rate of debug Serial
     *   serialBaudRate  -> baud rate of Serial
     *   durBtnPress     -> duration to count normal button press (millis)
     *   durCrisisPress  -> duration to count crisis button press (millis)
@@ -16,19 +18,20 @@
     * 
 */
 
-char btnId = 'A';
+char btnId = 'C';
 int btnPin = 8;
 
 int ledPinR = 3;
 int ledPinG = 5;
 int ledPinB = 6;
 
+int debugSerialBR = 9600;
 int serialBaudRate = 9600;
 int durBtnPress = 500;
 int durCrisisPress = 5000;
 int durCrisisStop = 7000;
-int durPartyColor = 1000;
-int durBlinkColor = 1000;
+int durPartyColor = 700;
+int durBlinkColor = 500;
 
 // Config end
 
@@ -44,6 +47,8 @@ int durBlinkColor = 1000;
     * 
 */
 
+SoftwareSerial comSerial(11,10);
+
 char curStatus = 'a';
 int curBtnStatus = 0;
 
@@ -58,7 +63,7 @@ unsigned long partyMillis = 0;
 unsigned long pressMillis = 0;
 
 const int RED[3] = {255,0,0};
-const int ORANGE[3] = {255,165,0};
+const int ORANGE[3] = {255,50,0};
 const int YELLOW[3] = {255,255,0};
 const int GREEN[3] = {0,255,0};
 const int CYAN[3] = {0,255,255};
@@ -69,7 +74,11 @@ const int WHITE[3] = {255,255,255};
 const int BLACK[3] = {0,0,0};
 
 void setup() {
-    Serial.begin(serialBaudRate);
+
+    pinMode(11, INPUT);
+    pinMode(10, OUTPUT);
+    Serial.begin(debugSerialBR);
+    comSerial.begin(serialBaudRate);
 
     pinMode(btnPin, INPUT);
     pinMode(ledPinR, OUTPUT);
@@ -82,14 +91,14 @@ void setup() {
         blinkType = 2;
 
         // DEBUG
-        //Serial.println("Dauerhaft gedrueckt.");
+        Serial.println("Dauerhaft gedrueckt.");
     } else {
         curStatus = 'e';
         setBtnColor(YELLOW);
         blinkType = 3;
 
         // DEBUG
-        //Serial.println("Ewig nicht gedrueckt.");
+        Serial.println("Ewig nicht gedrueckt.");
     }
 }
 
@@ -109,12 +118,12 @@ void handlePartyMode() {
         partyMillis = 0;
         
         // DEBUG
-        //Serial.println("Canceling party due to status.");
+        Serial.println("Canceling party due to status.");
         return;
     }
 
     // DEBUG
-    //Serial.println("Handling party.");
+    Serial.println("Handling party.");
 
     switch (partyState) {
         case 0:
@@ -154,7 +163,7 @@ void handlePartyMode() {
 void handleBlink() {
 
     // DEBUG
-    //Serial.println("Handle blink.");
+    Serial.println("Handle blink.");
 
     if (blinkState == false) {
         switch (blinkType) {
@@ -162,20 +171,25 @@ void handleBlink() {
                 setBtnColor(PINK);
 
                 // DEBUG
-                //Serial.println("Blinking Pink");
+                Serial.println("Blinking Pink");
                 break;
             case 2:
                 setBtnColor(ORANGE);
 
                 // DEBUG
-                //Serial.println("Blinking Orange");
+                Serial.println("Blinking Orange");
                 break;
             case 3:
                 setBtnColor(YELLOW);
 
                 // DEBUG
-                //Serial.println("Blinking Yellow");
+                Serial.println("Blinking Yellow");
                 break;
+            case 4:
+                setBtnColor(RED);
+
+                // DEBUG
+                Serial.println("Blinking Red");
         }
         blinkState = true;
     } else {
@@ -183,8 +197,15 @@ void handleBlink() {
         blinkState = false;
 
         // DEBUG
-        //Serial.println("Blinking Black");
+        Serial.println("Blinking Black");
     }
+    return;
+}
+
+void clearSerial() {
+    while (comSerial.available() > 0) {
+        comSerial.read();
+    } 
     return;
 }
 
@@ -194,7 +215,7 @@ void loop() {
     if (blinkType != 0 && millis() - blinkMillis >= durBlinkColor && partyActive == false) {
 
         // DEBUG
-        //Serial.println("Running blink; Dur: " + String(millis() - blinkMillis));
+        Serial.println("Running blink; Dur: " + String(millis() - blinkMillis));
 
         handleBlink();
         blinkMillis = millis();
@@ -206,31 +227,40 @@ void loop() {
         partyMillis = millis();
 
         // DEBUG
-        //Serial.println("Running party");
+        Serial.println("Running party");
     }
 
     // Serial feedback
-    if (Serial.available()) {
-        delay(20);
-        char readid = Serial.read();
-        char readinst = Serial.read();
+    if (comSerial.available()) {
+        delay(100);
+        bool fault = false;
+        char readid = comSerial.read();
+        char readinst = comSerial.read();
+
+        String readidtest = String(readid);
+        readidtest.toLowerCase();
 
         // DEBUG
-        //Serial.println("Got id " + String(readid) + " with instruction " + String(readinst));
+        Serial.println("Got id " + String(readid) + " with instruction " + String(readinst));
 
-        if (readid == btnId || readid == 'Y') {
+        if (readidtest == String(readid)) {
+            fault = true;
+            clearSerial();
+        }
+
+        if ((readid == btnId || readid == 'Y') && fault == false) {
 
             // Status check
 
             if (readinst == 'a' && readid != 'Y') {
-                Serial.print(curStatus);
+                comSerial.print(curStatus);
 
             // Crisis mode
 
             } else if (readinst == 'c') {
 
                 // DEBUG
-                //Serial.println("Enabling crisis due to Serial");
+                Serial.println("Enabling crisis due to Serial");
 
                 blinkType = 1;
                 blinkMillis = 0;
@@ -242,7 +272,7 @@ void loop() {
             } else if (readinst == 'r') {
 
                 // DEBUG
-                //Serial.println("Resetting due to Serial");
+                Serial.println("Resetting due to Serial");
 
                 partyActive = false;
                 partyMillis = 0;
@@ -259,7 +289,7 @@ void loop() {
             } else if (readinst == 'p') {
 
                 // DEBUG
-                //Serial.println("Enabling party due to Serial");
+                Serial.println("Enabling party due to Serial");
 
                 partyActive = true;
                 partyMillis = millis();
@@ -272,7 +302,7 @@ void loop() {
     if (digitalRead(btnPin) == HIGH && pressMillis == 0 && curStatus != 'd' && curStatus != 'e') {
         
         // DEBUG
-        //Serial.println("Button HIGH non e");
+        Serial.println("Button HIGH non e");
 
         pressMillis = millis();
 
@@ -284,21 +314,21 @@ void loop() {
             curBtnStatus = 3;
 
             // DEBUG
-            //Serial.println("Crisis stop button press color");
+            Serial.println("Crisis stop button press color");
 
             setBtnColor(RED);
         } else if (millis() - pressMillis >= durCrisisPress && curBtnStatus <= 1) {
 
             curBtnStatus = 2;
             // DEBUG
-            //Serial.println("Crisis button press color");
+            Serial.println("Crisis button press color");
 
             setBtnColor(PINK);
         } else if (millis() - pressMillis >= durBtnPress && curBtnStatus == 0) {
 
             curBtnStatus = 1;
             // DEBUG
-            //Serial.println("Normal button press color");
+            Serial.println("Normal button press color");
 
             setBtnColor(GREEN);
         }
@@ -309,19 +339,19 @@ void loop() {
         int dur = millis() - pressMillis;
 
         // DEBUG
-        //Serial.println("Button LOW; Dur: " + String(dur));
+        Serial.println("Button LOW; Dur: " + String(dur));
 
         if (dur >= durCrisisStop && curBtnStatus == 3) {
 
             // DEBUG
-            //Serial.println("Running crisis stop due to btnpress");
+            Serial.println("Running crisis stop due to btnpress");
 
             curStatus = 'a';
             setBtnColor(RED);
         } else if (dur >= durCrisisPress && curBtnStatus == 2) {
 
             // DEBUG
-            //Serial.println("Running crisis due to btnpress");
+            Serial.println("Running crisis due to btnpress");
 
             curStatus = 'c';
             blinkType = 1;
@@ -329,7 +359,7 @@ void loop() {
         } else if (dur >= durBtnPress && curBtnStatus == 1) {
 
             // DEBUG
-            //Serial.println("Running normal button press due to btnpress");
+            Serial.println("Running normal button press due to btnpress");
 
             curStatus = 'b';
         }
@@ -343,7 +373,7 @@ void loop() {
     } else if (digitalRead(btnPin) == HIGH && curStatus == 'e') {
 
         // DEBUG
-        //Serial.println("Running first time btnpress with e");
+        Serial.println("Running first time btnpress with e");
         
         curStatus = 'a';
         blinkType = 0;
