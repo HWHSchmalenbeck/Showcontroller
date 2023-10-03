@@ -25,7 +25,7 @@
 #define LCD_CYAN 0x07FF
 #define LCD_PINK 0xF81F
 #define LCD_YELLOW 0xFFE0
-#define LCD_ORANGE 0xFBE0
+#define LCD_ORANGE 0xFD40
 #define LCD_WHITE 0xFFFF
 
 // Controller button pins
@@ -171,6 +171,13 @@ void setup()
     // Begin Serial
     Serial.begin(9600);
 
+    // DEBUG
+    btnStatus['A'] = 'a';
+    btnStatus['B'] = 'b';
+    btnStatus['C'] = 'c';
+    btnStatus['D'] = 'd';
+    btnStatus['E'] = 'e';
+
     // PinModes
     pinMode(start_red, OUTPUT);
     pinMode(start_green, OUTPUT);
@@ -195,10 +202,15 @@ void setup()
     // Begin display
     tft.reset();
     uint16_t identifier = tft.readID();
+    if (identifier == 0x0101) {
+        identifier = 0x9341;
+    }
     tft.begin(identifier);
-    tft.setRotation(1);
-
+    tft.setRotation(3);
+    tft.fillScreen(LCD_BLACK);
     display_startup();
+    delay(500);
+    renderHome();
 }
 
 void display_startup()
@@ -217,10 +229,12 @@ void display_startup()
     tft.drawBitmap(179, 53, logoeye, 6, 6, LCD_PINK);
 
     // Text
-    tft.setCursor(100, 180);
-    tft.setTextSize(5);
+    tft.setCursor(127, 180);
+    tft.setTextSize(3);
     tft.setTextColor(LCD_WHITE);
-    tft.print("HWHS Showcontroller");
+    tft.print("HWHS");
+    tft.setCursor(40, 210);
+    tft.print("Showcontroller");
 
     return;
 }
@@ -368,4 +382,5 @@ void renderButtonPage(int number)
 
 void loop()
 {
+
 }
