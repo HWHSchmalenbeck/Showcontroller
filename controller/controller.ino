@@ -56,17 +56,21 @@ int status_led_red = 45;
 int status_led_green = 44;
 int status_led_blue = 46;
 
+// Selection number
+
+int curSelection = -1;
+
 /*
  *
  *  Page Type
- *  
+ *
  *  -1   ->  Home
  *  0-5  ->  Button Page
  *  -2   ->  Settings
  *  -3   ->  Credits
  *  -4   ->  Debug
- * 
-*/
+ *
+ */
 
 int curPage = -1;
 
@@ -159,6 +163,15 @@ uint16_t statusDcolor = LCD_BLUE;
 uint16_t statusEcolor = LCD_ORANGE;
 uint16_t statusNcolor = LCD_BLACK;
 
+// Action locks
+
+unsigned long page_btn_millis = 0;
+unsigned long home_btn_millis = 0;
+unsigned long open_settings_millis = 0;
+unsigned long nav_left_btn_millis = 0;
+unsigned long nav_enter_btn_millis = 0;
+unsigned long nav_right_btn_millis = 0;
+
 // Bitmaps for logo
 extern uint8_t logobody[];
 extern uint8_t logoeye[];
@@ -202,7 +215,8 @@ void setup()
     // Begin display
     tft.reset();
     uint16_t identifier = tft.readID();
-    if (identifier == 0x0101) {
+    if (identifier == 0x0101)
+    {
         identifier = 0x9341;
     }
     tft.begin(identifier);
@@ -338,7 +352,7 @@ void renderHome()
 void renderButtonPage(int number)
 {
     curPage = number;
-    
+
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(8, 8);
     tft.setTextSize(2);
@@ -365,9 +379,12 @@ void renderButtonPage(int number)
 
     tft.drawRect(5, 160, 150, 75, LCD_BLACK);
     tft.drawRect(19, 186, 27, 22, LCD_BLACK);
-    if (btnBypass[arealinking[number]] == true) {
+    if (btnBypass[arealinking[number]] == true)
+    {
         tft.fillRect(20, 187, 25, 20, LCD_GREEN);
-    } else {
+    }
+    else
+    {
         tft.fillRect(20, 187, 25, 20, LCD_RED);
     }
     tft.setCursor(55, 190);
@@ -380,7 +397,256 @@ void renderButtonPage(int number)
     return;
 }
 
+void renderSettingsPage()
+{
+    tft.fillScreen(LCD_WHITE);
+    tft.setCursor(90, 20);
+    tft.setTextSize(3);
+    tft.setTextColor(LCD_BLACK);
+    tft.print("Settings");
+
+    tft.setTextSize(2);
+
+    tft.drawRect(60, 70, 200, 40, LCD_BLACK);
+    tft.setCursor(118, 82);
+    tft.print("Credits");
+
+    tft.drawRect(60, 120, 200, 40, LCD_BLACK);
+    tft.setCursor(131, 132);
+    tft.print("Debug");
+
+    tft.drawRect(60, 170, 200, 40, LCD_BLACK);
+    tft.setCursor(97, 182);
+    tft.print("Re-Discover");
+    return;
+}
+
+void renderCreditsPage()
+{
+    tft.fillScreen(LCD_WHITE);
+    tft.drawRect(5, 5, 50, 50, LCD_BLACK);
+
+    tft.setCursor(75, 14);
+    tft.setTextColor(LCD_BLACK);
+    tft.setTextSize(2);
+    tft.print("HWHS Showcontroller");
+    tft.setCursor(145, 34);
+    tft.print("Credits");
+
+    tft.setCursor(10, 70);
+    tft.print("Coding:");
+
+    tft.setCursor(170, 70);
+    tft.print("Lois");
+
+    tft.setCursor(10, 110);
+    tft.print("Konstruktion:");
+
+    tft.setCursor(170, 110);
+    tft.print("Valentin");
+
+    tft.setCursor(170, 130);
+    tft.print("Lois");
+
+    tft.setCursor(170, 150);
+    tft.print("Timo");
+
+    tft.setCursor(170, 170);
+    tft.print("Christof");
+
+    tft.setCursor(170, 190);
+    tft.print("Steffen");
+
+    tft.setTextSize(1);
+    tft.setCursor(63, 226);
+    tft.print("Holz gesponsert von Holzland Wulf");
+    return;
+}
+
+void renderDebugPage()
+{
+    tft.fillScreen(LCD_WHITE);
+    tft.setCursor(105, 10);
+    tft.setTextSize(2);
+    tft.setTextColor(LCD_BLACK);
+    tft.print("Debug Page");
+
+    tft.setCursor(60, 30);
+    tft.setTextSize(1);
+    tft.print("Zum Verlassen: Left + Right + Enter");
+    tft.setCursor(104, 40);
+    tft.print("Lamptest: Comdisable");
+
+    tft.setCursor(10, 70);
+    tft.setTextSize(2);
+    tft.print("Buttons:");
+
+    tft.setCursor(140, 70);
+    tft.print("Home");
+    tft.fillRect(270, 68, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 90);
+    tft.print("Page");
+    tft.fillRect(270, 88, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 110);
+    tft.print("Left");
+    tft.fillRect(270, 108, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 130);
+    tft.print("Enter");
+    tft.fillRect(270, 128, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 150);
+    tft.print("Right");
+    tft.fillRect(270, 148, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 170);
+    tft.print("Panic");
+    tft.fillRect(270, 168, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 190);
+    tft.print("Start");
+    tft.fillRect(270, 188, 20, 20, LCD_RED);
+
+    tft.setCursor(140, 210);
+    tft.print("Comdisable");
+    tft.fillRect(270, 208, 20, 20, LCD_RED);
+    return;
+}
+
+/*
+ *
+ *  Handle Selection Function
+ * 
+ *  act:
+ *  
+ *  c   =>  Clear (Clear selection on new page reload) [Sets selection to -1]
+ *  m   =>  Move (Move the current selection) [Increases or decreases the selection according to dir value]
+ * 
+*/
+
+void renderSelection(int id, bool negative = false) {
+    uint16_t selectionColor = LCD_RED;
+    if (negative == true) {
+        selectionColor = LCD_WHITE;
+    }
+
+    // Settings page
+
+    if (curPage == -2) {
+        switch (id) {
+            case 1:
+                tft.drawRect(59,69,202,42,selectionColor);
+                return;
+            case 2:
+                tft.drawRect(59,119,202,42,selectionColor);
+                return;
+            case 3:
+                tft.drawRect(59,169,202,42,selectionColor);
+                return;
+        }
+    
+    // Home page
+    // ToDo: Get home page selections
+
+    } else if (curPage == -1) {
+        switch (id) {
+            case 1:
+                return;
+            case 2:
+                return;
+            case 3:
+                return;
+            case 4:
+                return;
+            case 5:
+                return;
+            case 6:
+                return;
+        }
+    
+    // Button page
+    // ToDo: Get button page selections
+
+    } else if (curPage >= 0 && curPage <= 5) {
+        switch (id) {
+            case 1:
+                return;
+            case 2:
+                return;
+            case 3:
+                return;
+        }
+    }
+}
+
+void handleSelection(char act, int dir = 0) {
+    int btnPageSelectMax = 3;
+    int homePageSelectMax = 6;
+    int settingsPageSelectMax = 3;
+
+    if (act == 'c') {
+        curSelection = -1;
+        return;
+    }
+    if (dir == NULL || dir == 0) {
+        Serial.println("ERROR (handleSelection): NO DIR OR DIR 0");
+        return;
+    }
+
+
+}
+
+void handlePageBtn()
+{
+    if (curPage < -1 || curPage == 5)
+    {
+        curPage = -1;
+        renderHome();
+        return;
+    }
+    curPage += 1;
+    renderButtonPage(curPage);
+    return;
+}
+
+void handleHomeBtn()
+{
+    if (curPage == -1)
+    {
+        curPage = -2;
+        renderSettingsPage();
+        return;
+    }
+    curPage = -1;
+    renderHome();
+    return;
+}
+
+void handleNavRightBtn() {
+
+}
+
+void handleNavEnterBtn() {
+
+}
+
+void handleNavLeftBtn() {
+
+}
+
 void loop()
 {
+    if (digitalRead(page_btn) == HIGH && (page_btn_millis == 0 || millis() - page_btn_millis >= 500))
+    {
+        page_btn_millis = millis();
+        handlePageBtn();
+    }
 
+    if (digitalRead(home_btn) == HIGH && (home_btn_millis == 0 || millis() - home_btn_millis >= 500))
+    {
+        home_btn_millis = millis();
+        handleHomeBtn();
+    }
 }
