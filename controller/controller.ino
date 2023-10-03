@@ -141,6 +141,7 @@ char portids[] = {};
  */
 
 char btnStatus[] = {};
+
 bool btnBypass[] = {};
 
 /*
@@ -183,13 +184,7 @@ void setup()
 {
     // Begin Serial
     Serial.begin(9600);
-
-    // DEBUG
-    btnStatus['A'] = 'a';
-    btnStatus['B'] = 'b';
-    btnStatus['C'] = 'c';
-    btnStatus['D'] = 'd';
-    btnStatus['E'] = 'e';
+    
 
     // PinModes
     pinMode(start_red, OUTPUT);
@@ -224,6 +219,11 @@ void setup()
     tft.fillScreen(LCD_BLACK);
     display_startup();
     delay(500);
+    btnStatus[arealinking[0]] = 'a';
+    btnStatus[arealinking[1]] = 'b';
+    btnStatus[arealinking[2]] = 'c';
+    btnStatus[arealinking[3]] = 'd';
+    btnStatus[arealinking[4]] = 'e';
     renderHome();
 }
 
@@ -278,8 +278,209 @@ uint16_t getcolor(char status)
     }
 }
 
+/*
+ *
+ *  Handle Selection Function
+ *
+ *  act:
+ *
+ *  c   =>  Clear (Clear selection on new page reload) [Sets selection to -1]
+ *  m   =>  Move (Move the current selection) [Increases or decreases the selection according to dir value]
+ *  u   =>  Use (Run the current selections action)
+ *
+ */
+
+void renderSelection(int id, bool negative = false)
+{
+    uint16_t selectionColor = LCD_RED;
+    if (negative == true)
+    {
+        selectionColor = LCD_WHITE;
+    }
+
+    // Settings page
+
+    if (curPage == -2)
+    {
+        switch (id)
+        {
+        case 1:
+            tft.drawRect(59, 69, 202, 42, selectionColor);
+            return;
+        case 2:
+            tft.drawRect(59, 119, 202, 42, selectionColor);
+            return;
+        case 3:
+            tft.drawRect(59, 169, 202, 42, selectionColor);
+            return;
+        }
+    }
+    else if (curPage == -1)
+    {
+        switch (id)
+        {
+        case 1:
+            tft.drawRect(14, 19, 140, 28, selectionColor);
+            return;
+        case 2:
+            tft.drawRect(169, 19, 140, 28, selectionColor);
+            return;
+        case 3:
+            tft.drawRect(14, 75, 140, 28, selectionColor);
+            return;
+        case 4:
+            tft.drawRect(169, 75, 140, 28, selectionColor);
+            return;
+        case 5:
+            tft.drawRect(14, 131, 140, 28, selectionColor);
+            return;
+        case 6:
+            tft.drawRect(169, 131, 140, 28, selectionColor);
+            return;
+        }
+    }
+    else if (curPage >= 0 && curPage <= 5)
+    {
+        switch (id)
+        {
+        case 1:
+            tft.drawRect(4, 74, 152, 77, selectionColor);
+            return;
+        case 2:
+            tft.drawRect(4, 159, 152, 77, selectionColor);
+            return;
+        case 3:
+            tft.drawRect(164, 159, 152, 77, selectionColor);
+            return;
+        }
+    }
+}
+
+void handleSelection(char act, int dir = 0)
+{
+    int btnPageSelectMax = 3;
+    int homePageSelectMax = 6;
+    int settingsPageSelectMax = 3;
+
+    if (act == 'u')
+    {
+        if (curPage == -2)
+        {
+            switch (curSelection)
+            {
+            case 1:
+                curPage = -3;
+                renderCreditsPage();
+                return;
+            case 2:
+                curPage = -4;
+                renderDebugPage();
+                return;
+            case 3:
+                // ToDo: Add Rediscover
+                return;
+            }
+        }
+        else if (curPage == -1)
+        {
+            curPage = curSelection-1;
+            renderButtonPage(curSelection-1);
+            return;
+        }
+        else if (curPage >= 0 && curPage <= 5)
+        {
+            // ToDo: Add Button Page actions
+            switch (curSelection)
+            {
+            case 1:
+                return;
+            case 2:
+                int curBypassStatus = btnBypass[curPage];
+
+                if (curBypassStatus == false) {
+                    btnBypass[curPage] = 1;
+                    tft.fillRect(20, 187, 25, 20, LCD_GREEN);
+                    return;
+                } else {
+                    btnBypass[curPage] = 0;
+                    tft.fillRect(20, 187, 25, 20, LCD_RED);
+                    return;
+                }
+                return;
+            case 3:
+                return;
+            }
+        }
+    }
+
+    if (act == 'c')
+    {
+        curSelection = -1;
+        return;
+    }
+    if (dir == NULL || dir == 0)
+    {
+        Serial.println("ERROR (handleSelection): NO DIR OR DIR 0");
+        return;
+    }
+    if (curSelection == -1)
+    {
+        curSelection = 1;
+        renderSelection(1, false);
+        return;
+    }
+
+    curSelection = curSelection + dir;
+
+    int maxSelection;
+
+    if (curPage == -2)
+    {
+        maxSelection = settingsPageSelectMax;
+    }
+    else if (curPage == -1)
+    {
+        maxSelection = homePageSelectMax;
+    }
+    else if (curPage >= 0 && curPage <= 5)
+    {
+        maxSelection = btnPageSelectMax;
+    }
+
+    if (curSelection <= 0)
+    {
+        renderSelection(1, true);
+        curSelection = maxSelection;
+        renderSelection(curSelection, false);
+        return;
+    }
+
+    if (curSelection > maxSelection)
+    {
+        renderSelection(maxSelection, true);
+        curSelection = 1;
+        renderSelection(curSelection, false);
+        return;
+    }
+
+    if (dir == 1)
+    {
+        renderSelection(curSelection - 1, true);
+        renderSelection(curSelection, false);
+        return;
+    }
+    else if (dir == -1)
+    {
+        renderSelection(curSelection + 1, true);
+        renderSelection(curSelection, false);
+        return;
+    }
+    return;
+}
+
 void renderHome()
 {
+    handleSelection('c');
     curPage = -1;
     // Fill screen with White
     tft.fillScreen(LCD_WHITE);
@@ -351,6 +552,7 @@ void renderHome()
 
 void renderButtonPage(int number)
 {
+    handleSelection('c');
     curPage = number;
 
     tft.fillScreen(LCD_WHITE);
@@ -379,7 +581,7 @@ void renderButtonPage(int number)
 
     tft.drawRect(5, 160, 150, 75, LCD_BLACK);
     tft.drawRect(19, 186, 27, 22, LCD_BLACK);
-    if (btnBypass[arealinking[number]] == true)
+    if (btnBypass[number] == 1)
     {
         tft.fillRect(20, 187, 25, 20, LCD_GREEN);
     }
@@ -399,6 +601,7 @@ void renderButtonPage(int number)
 
 void renderSettingsPage()
 {
+    handleSelection('c');
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(90, 20);
     tft.setTextSize(3);
@@ -423,6 +626,7 @@ void renderSettingsPage()
 
 void renderCreditsPage()
 {
+    handleSelection('c');
     tft.fillScreen(LCD_WHITE);
     tft.drawRect(5, 5, 50, 50, LCD_BLACK);
 
@@ -465,6 +669,7 @@ void renderCreditsPage()
 
 void renderDebugPage()
 {
+    handleSelection('c');
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(105, 10);
     tft.setTextSize(2);
@@ -515,89 +720,6 @@ void renderDebugPage()
     return;
 }
 
-/*
- *
- *  Handle Selection Function
- * 
- *  act:
- *  
- *  c   =>  Clear (Clear selection on new page reload) [Sets selection to -1]
- *  m   =>  Move (Move the current selection) [Increases or decreases the selection according to dir value]
- * 
-*/
-
-void renderSelection(int id, bool negative = false) {
-    uint16_t selectionColor = LCD_RED;
-    if (negative == true) {
-        selectionColor = LCD_WHITE;
-    }
-
-    // Settings page
-
-    if (curPage == -2) {
-        switch (id) {
-            case 1:
-                tft.drawRect(59,69,202,42,selectionColor);
-                return;
-            case 2:
-                tft.drawRect(59,119,202,42,selectionColor);
-                return;
-            case 3:
-                tft.drawRect(59,169,202,42,selectionColor);
-                return;
-        }
-    
-    // Home page
-    // ToDo: Get home page selections
-
-    } else if (curPage == -1) {
-        switch (id) {
-            case 1:
-                return;
-            case 2:
-                return;
-            case 3:
-                return;
-            case 4:
-                return;
-            case 5:
-                return;
-            case 6:
-                return;
-        }
-    
-    // Button page
-    // ToDo: Get button page selections
-
-    } else if (curPage >= 0 && curPage <= 5) {
-        switch (id) {
-            case 1:
-                return;
-            case 2:
-                return;
-            case 3:
-                return;
-        }
-    }
-}
-
-void handleSelection(char act, int dir = 0) {
-    int btnPageSelectMax = 3;
-    int homePageSelectMax = 6;
-    int settingsPageSelectMax = 3;
-
-    if (act == 'c') {
-        curSelection = -1;
-        return;
-    }
-    if (dir == NULL || dir == 0) {
-        Serial.println("ERROR (handleSelection): NO DIR OR DIR 0");
-        return;
-    }
-
-
-}
-
 void handlePageBtn()
 {
     if (curPage < -1 || curPage == 5)
@@ -624,16 +746,20 @@ void handleHomeBtn()
     return;
 }
 
-void handleNavRightBtn() {
-
+void handleNavRightBtn()
+{
+    handleSelection('m', 1);
+    return;
 }
 
-void handleNavEnterBtn() {
-
+void handleNavEnterBtn()
+{
+    handleSelection('u');
 }
 
-void handleNavLeftBtn() {
-
+void handleNavLeftBtn()
+{
+    handleSelection('m', -1);
 }
 
 void loop()
@@ -648,5 +774,23 @@ void loop()
     {
         home_btn_millis = millis();
         handleHomeBtn();
+    }
+
+    if (digitalRead(nav_right_btn) == HIGH && (nav_right_btn_millis == 0 || millis() - nav_right_btn_millis >= 500))
+    {
+        nav_right_btn_millis = millis();
+        handleNavRightBtn();
+    }
+
+    if (digitalRead(nav_enter_btn) == HIGH && (nav_enter_btn_millis == 0 || millis() - nav_enter_btn_millis >= 500))
+    {
+        nav_enter_btn_millis = millis();
+        handleNavEnterBtn();
+    }
+
+    if (digitalRead(nav_left_btn) == HIGH && (nav_left_btn_millis == 0 || millis() - nav_left_btn_millis >= 500))
+    {
+        nav_left_btn_millis = millis();
+        handleNavLeftBtn();
     }
 }
