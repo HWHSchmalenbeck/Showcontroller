@@ -172,6 +172,20 @@ unsigned long open_settings_millis = 0;
 unsigned long nav_left_btn_millis = 0;
 unsigned long nav_enter_btn_millis = 0;
 unsigned long nav_right_btn_millis = 0;
+unsigned long com_led_disable_btn_millis = 0;
+unsigned long crisis_btn_millis = 0;
+unsigned long start_btn_millis = 0;
+
+// Debug states
+
+bool page_btn_debug = false;
+bool home_btn_debug = false;
+bool nav_left_btn_debug = false;
+bool nav_enter_btn_debug = false;
+bool nav_right_btn_debug = false;
+bool com_led_disable_btn_debug = false;
+bool crisis_btn_debug = false;
+bool start_btn_debug = false;
 
 // Bitmaps for logo
 extern uint8_t logobody[];
@@ -184,7 +198,6 @@ void setup()
 {
     // Begin Serial
     Serial.begin(9600);
-    
 
     // PinModes
     pinMode(start_red, OUTPUT);
@@ -383,11 +396,12 @@ void handleSelection(char act, int dir = 0)
         }
         else if (curPage == -1)
         {
-            if (curSelection == -1) {
+            if (curSelection == -1)
+            {
                 return;
             }
-            curPage = curSelection-1;
-            renderButtonPage(curSelection-1);
+            curPage = curSelection - 1;
+            renderButtonPage(curSelection - 1);
             return;
         }
         else if (curPage >= 0 && curPage <= 5)
@@ -400,11 +414,14 @@ void handleSelection(char act, int dir = 0)
             case 2:
                 int curBypassStatus = btnBypass[curPage];
 
-                if (curBypassStatus == false) {
+                if (curBypassStatus == false)
+                {
                     btnBypass[curPage] = 1;
                     tft.fillRect(20, 187, 25, 20, LCD_GREEN);
                     return;
-                } else {
+                }
+                else
+                {
                     btnBypass[curPage] = 0;
                     tft.fillRect(20, 187, 25, 20, LCD_RED);
                     return;
@@ -673,6 +690,16 @@ void renderCreditsPage()
 void renderDebugPage()
 {
     handleSelection('c');
+
+    page_btn_debug = false;
+    home_btn_debug = false;
+    nav_left_btn_debug = false;
+    nav_enter_btn_debug = false;
+    nav_right_btn_debug = false;
+    com_led_disable_btn_debug = false;
+    crisis_btn_debug = false;
+    start_btn_debug = false;
+
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(105, 10);
     tft.setTextSize(2);
@@ -725,6 +752,16 @@ void renderDebugPage()
 
 void handlePageBtn()
 {
+    if (curPage == -4)
+    {
+        if (page_btn_debug == true)
+        {
+            return;
+        }
+        page_btn_debug = true;
+        tft.fillRect(270, 88, 20, 20, LCD_GREEN);
+        return;
+    }
     if (curPage < -1 || curPage == 5)
     {
         curPage = -1;
@@ -738,6 +775,16 @@ void handlePageBtn()
 
 void handleHomeBtn()
 {
+    if (curPage == -4)
+    {
+        if (home_btn_debug == true)
+        {
+            return;
+        }
+        home_btn_debug = true;
+        tft.fillRect(270, 68, 20, 20, LCD_GREEN);
+        return;
+    }
     if (curPage == -1)
     {
         curPage = -2;
@@ -751,18 +798,133 @@ void handleHomeBtn()
 
 void handleNavRightBtn()
 {
+    if (curPage == -4)
+    {
+        if (digitalRead(nav_enter_btn) == HIGH && digitalRead(nav_left_btn) == HIGH)
+        {
+            curPage = -1;
+            renderHome();
+            return;
+        }
+        if (nav_left_btn_debug == true)
+        {
+            return;
+        }
+        nav_right_btn_debug = true;
+        tft.fillRect(270, 148, 20, 20, LCD_GREEN);
+        return;
+    }
     handleSelection('m', 1);
     return;
 }
 
 void handleNavEnterBtn()
 {
+    if (curPage == -4)
+    {
+        if (nav_enter_btn_debug == true)
+        {
+            return;
+        }
+        nav_enter_btn_debug = true;
+        tft.fillRect(270, 128, 20, 20, LCD_GREEN);
+        return;
+    }
     handleSelection('u');
+    return;
 }
 
 void handleNavLeftBtn()
 {
+    if (curPage == -4)
+    {
+        if (nav_left_btn_debug == true)
+        {
+            return;
+        }
+        nav_left_btn_debug = true;
+        tft.fillRect(270, 108, 20, 20, LCD_GREEN);
+        return;
+    }
     handleSelection('m', -1);
+    return;
+}
+
+void handleComLedDisableBtn()
+{
+    if (curPage == -4)
+    {
+        if (com_led_disable_btn_debug == true)
+        {
+            return;
+        }
+        lampTest(true);
+        com_led_disable_btn_debug = true;
+        tft.fillRect(270, 208, 20, 20, LCD_GREEN);
+        return;
+    }
+    // Disable the com leds
+    return;
+}
+
+void handleStartBtn() {
+    if (curPage == -4) {
+        if (start_btn_debug == true) {
+            return;
+        }
+        start_btn_debug = true;
+        tft.fillRect(270, 188, 20, 20, LCD_GREEN);
+        return;
+    }
+
+    // Start btn function
+}
+
+void handleCrisisBtn() {
+    if (curPage == -4) {
+        if (crisis_btn_debug == true) {
+            return;
+        }
+        crisis_btn_debug = true;
+        tft.fillRect(270, 168, 20, 20, LCD_GREEN);
+        return;
+    }
+
+    // Panic button function
+}
+
+void lampTest(bool mode)
+{
+    if (mode == true)
+    {
+        digitalWrite(start_red, HIGH);
+        digitalWrite(start_blue, HIGH);
+        digitalWrite(start_green, HIGH);
+
+        digitalWrite(crisis_red, HIGH);
+
+        digitalWrite(status_led_red, HIGH);
+        digitalWrite(status_led_green, HIGH);
+        digitalWrite(status_led_blue, HIGH);
+
+        digitalWrite(tx_led, HIGH);
+        digitalWrite(rx_led, HIGH);
+        return;
+    }
+
+    digitalWrite(start_red, LOW);
+    digitalWrite(start_blue, LOW);
+    digitalWrite(start_green, LOW);
+
+    digitalWrite(crisis_red, LOW);
+
+    digitalWrite(status_led_red, LOW);
+    digitalWrite(status_led_green, LOW);
+    digitalWrite(status_led_blue, LOW);
+
+    digitalWrite(tx_led, LOW);
+    digitalWrite(rx_led, LOW);
+    return;
 }
 
 void loop()
@@ -795,5 +957,99 @@ void loop()
     {
         nav_left_btn_millis = millis();
         handleNavLeftBtn();
+    }
+
+    if (digitalRead(com_led_disable_btn) == HIGH && (com_led_disable_btn_millis == 0 || millis() - com_led_disable_btn_millis >= 500))
+    {
+        com_led_disable_btn_millis = millis();
+        handleComLedDisableBtn();
+    }
+
+    if (digitalRead(start_btn) == HIGH && (start_btn_millis == 0 || millis() - start_btn_millis >= 500)) {
+        start_btn_millis = millis();
+        handleStartBtn();
+    }
+
+    if (digitalRead(crisis_btn) == HIGH && (crisis_btn_millis == 0 || millis() - crisis_btn_millis >= 500)) {
+        crisis_btn_millis = millis();
+        handleCrisisBtn();
+    }
+
+    // Debug page handling
+
+    if (curPage == -4)
+    {
+        if (digitalRead(page_btn) == LOW)
+        {
+            if (page_btn_debug == true)
+            {
+                page_btn_debug = false;
+                tft.fillRect(270, 88, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(home_btn) == LOW)
+        {
+            if (home_btn_debug == true)
+            {
+                home_btn_debug = false;
+                tft.fillRect(270, 68, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(nav_right_btn) == LOW)
+        {
+            if (nav_right_btn_debug == true)
+            {
+                nav_right_btn_debug = false;
+                tft.fillRect(270, 148, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(nav_enter_btn) == LOW)
+        {
+            if (nav_enter_btn_debug == true)
+            {
+                nav_enter_btn_debug = false;
+                tft.fillRect(270, 128, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(nav_left_btn) == LOW)
+        {
+            if (nav_left_btn_debug == true)
+            {
+                nav_left_btn_debug = false;
+                tft.fillRect(270, 108, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(com_led_disable_btn) == LOW)
+        {
+            if (com_led_disable_btn_debug == true)
+            {
+                com_led_disable_btn_debug = false;
+                tft.fillRect(270, 208, 20, 20, LCD_RED);
+                lampTest(false);
+            }
+        }
+
+        if (digitalRead(start_btn) == LOW)
+        {
+            if (start_btn_debug == true)
+            {
+                start_btn_debug = false;
+                tft.fillRect(270, 188, 20, 20, LCD_RED);
+            }
+        }
+
+        if (digitalRead(crisis_btn) == LOW)
+        {
+            if (crisis_btn_debug == true)
+            {
+                crisis_btn_debug = false;
+                tft.fillRect(270, 168, 20, 20, LCD_RED);
+            }
+        }
     }
 }
