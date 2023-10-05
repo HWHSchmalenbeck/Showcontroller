@@ -237,6 +237,12 @@ void setup()
     btnStatus[arealinking[2]] = 'c';
     btnStatus[arealinking[3]] = 'd';
     btnStatus[arealinking[4]] = 'e';
+
+    // Make buttons glow
+
+    //digitalWrite(start_green, HIGH);
+    //digitalWrite(crisis_red, HIGH);
+
     renderHome();
 }
 
@@ -802,6 +808,9 @@ void handleNavRightBtn()
     {
         if (digitalRead(nav_enter_btn) == HIGH && digitalRead(nav_left_btn) == HIGH)
         {
+            // Make buttons glow again
+            //digitalWrite(start_green, HIGH);
+            //digitalWrite(crisis_red, HIGH);
             curPage = -1;
             renderHome();
             return;
@@ -867,9 +876,12 @@ void handleComLedDisableBtn()
     return;
 }
 
-void handleStartBtn() {
-    if (curPage == -4) {
-        if (start_btn_debug == true) {
+void handleStartBtn()
+{
+    if (curPage == -4)
+    {
+        if (start_btn_debug == true)
+        {
             return;
         }
         start_btn_debug = true;
@@ -880,9 +892,12 @@ void handleStartBtn() {
     // Start btn function
 }
 
-void handleCrisisBtn() {
-    if (curPage == -4) {
-        if (crisis_btn_debug == true) {
+void handleCrisisBtn()
+{
+    if (curPage == -4)
+    {
+        if (crisis_btn_debug == true)
+        {
             return;
         }
         crisis_btn_debug = true;
@@ -965,12 +980,14 @@ void loop()
         handleComLedDisableBtn();
     }
 
-    if (digitalRead(start_btn) == HIGH && (start_btn_millis == 0 || millis() - start_btn_millis >= 500)) {
+    if (digitalRead(start_btn) == HIGH && (start_btn_millis == 0 || millis() - start_btn_millis >= 500))
+    {
         start_btn_millis = millis();
         handleStartBtn();
     }
 
-    if (digitalRead(crisis_btn) == HIGH && (crisis_btn_millis == 0 || millis() - crisis_btn_millis >= 500)) {
+    if (digitalRead(crisis_btn) == HIGH && (crisis_btn_millis == 0 || millis() - crisis_btn_millis >= 500))
+    {
         crisis_btn_millis = millis();
         handleCrisisBtn();
     }
