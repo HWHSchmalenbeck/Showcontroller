@@ -383,6 +383,9 @@ void handleSelection(char act, int dir = 0)
         }
         else if (curPage == -1)
         {
+            if (curSelection == -1) {
+                return;
+            }
             curPage = curSelection-1;
             renderButtonPage(curSelection-1);
             return;
