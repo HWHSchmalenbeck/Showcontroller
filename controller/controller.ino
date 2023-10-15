@@ -97,16 +97,20 @@ char arealinking[] = {'A', 'B', 'C', 'D', 'E', 'F'};
  *
  *  SoftwareSerial Port handling
  *
- *  Values must be under the same index
- *
  */
 
-SoftwareSerial serialports[] = {
-    SoftwareSerial(A10, 51), // Dose Links, Links
-    SoftwareSerial(A9, 53),  // Dose Links, Rechts
-    SoftwareSerial(A8, 13),  // Dose Rechts, Links
-    SoftwareSerial(A11, 52)  // Dose Rechts, Rechts
-};
+SoftwareSerial serialPortOne(51, A10);  // Dose Links, Links
+SoftwareSerial serialPortTwo(53, A9);   // Dose Links, Rechts
+SoftwareSerial serialPortThree(13, A8); // Dose Rechts, Links
+SoftwareSerial serialPortFour(52, A11); // Dose Rechts, Rechts
+
+// Currently active serial port
+
+SoftwareSerial curPort(22, 24);
+int curPortNumber = -1;
+
+bool waitingForAnswer = false;
+unsigned long waitingForAnswerMillis = 0;
 
 /*
  *
@@ -129,7 +133,7 @@ char porttype[] = {};
  *
  */
 
-char portids[] = {};
+String portids[4] = {};
 
 /*
  *
@@ -194,10 +198,23 @@ extern uint8_t logoeye[];
 // Tft display
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
+// Discovery values
+bool discoveryActive = false;
+
 void setup()
 {
+
     // Begin Serial
     Serial.begin(9600);
+
+    /*serialPortOne.begin(9600);
+    serialPortTwo.begin(9600);
+    serialPortOne.end();*/
+    //serialPortThree.begin(9600);
+    //serialPortFour.begin(9600);
+
+    Serial.println("1 listen: " + String(serialPortOne.isListening()));
+    Serial.println("2 listen: " + String(serialPortTwo.isListening()));
 
     // PinModes
     pinMode(start_red, OUTPUT);
@@ -238,12 +255,57 @@ void setup()
     btnStatus[arealinking[3]] = 'd';
     btnStatus[arealinking[4]] = 'e';
 
+    discoveryActive = true;
+
     // Make buttons glow
 
-    //digitalWrite(start_green, HIGH);
-    //digitalWrite(crisis_red, HIGH);
+    // digitalWrite(start_green, HIGH);
+    // digitalWrite(crisis_red, HIGH);
 
     renderHome();
+}
+
+bool checkForAttachmentPort(int number)
+{
+    bool error = false;
+
+    switch (number)
+    {
+    case 1:
+        curPort = SoftwareSerial(serialPortOne);
+        return;
+    case 2:
+        curPort = SoftwareSerial(serialPortTwo);
+        return;
+    case 3:
+        curPort = SoftwareSerial(serialPortThree);
+        return;
+    case 4:
+        curPort = SoftwareSerial(serialPortFour);
+        return;
+    default:
+        error = true;
+        return;
+    }
+
+    if (error == true)
+    {
+        return false;
+    }
+
+    serialPortTwo.listen();
+    curPort.print('?');
+    curPort.print('_');
+
+    while (!curPort.available())
+    {
+        delay(1);
+    }
+
+    if (curPort.available())
+    {
+        char anstype = curPort.read();
+    }
 }
 
 void display_startup()
@@ -809,8 +871,8 @@ void handleNavRightBtn()
         if (digitalRead(nav_enter_btn) == HIGH && digitalRead(nav_left_btn) == HIGH)
         {
             // Make buttons glow again
-            //digitalWrite(start_green, HIGH);
-            //digitalWrite(crisis_red, HIGH);
+            // digitalWrite(start_green, HIGH);
+            // digitalWrite(crisis_red, HIGH);
             curPage = -1;
             renderHome();
             return;
@@ -942,7 +1004,7 @@ void lampTest(bool mode)
     return;
 }
 
-void loop()
+void checkForBtnActive()
 {
     if (digitalRead(page_btn) == HIGH && (page_btn_millis == 0 || millis() - page_btn_millis >= 500))
     {
@@ -1068,5 +1130,107 @@ void loop()
                 tft.fillRect(270, 168, 20, 20, LCD_RED);
             }
         }
+    }
+    return;
+}
+
+void discoveryUtil()
+{
+    if (waitingForAnswer == true)
+    {
+        if (curPort.available() && millis() - waitingForAnswerMillis >= 200)
+        {
+            Serial.println("Got answer from curPort");
+
+            char curPortType = curPort.read();
+            char curPortCount;
+            char curPortBId;
+            String curPortSId = "";
+
+            delay(10);
+
+            if (curPortType == 'B')
+            {
+                Serial.println("curPort is Button");
+                curPortBId = curPort.read();
+                portids[curPortNumber] = String(curPortBId);
+                Serial.println("curPortId is " + String(curPortBId));
+            }
+            else if (curPortType == 'S')
+            {
+                curPortCount = curPort.read();
+                int calcNum = curPortCount - '0';
+
+                for (int i = 1; calcNum; i++)
+                {
+                    char readId = curPort.read();
+                    curPortSId = curPortBId + readId;
+                }
+                portids[curPortNumber] = curPortSId;
+            }
+
+            porttype[curPortNumber] = curPortType;
+
+            waitingForAnswer = false;
+        }
+
+        if (waitingForAnswer == true && millis() - waitingForAnswerMillis >= 1000)
+        {
+            Serial.println("Got no answer from curPort");
+            porttype[curPortNumber] = 'N';
+            waitingForAnswer = false;
+        }
+    }
+    else
+    {
+        curPort.end();
+        delay(10);
+        curPortNumber += 1;
+
+        Serial.println("curPortNumber " + String(curPortNumber));
+
+        if (curPortNumber == 0) {
+            curPort = serialPortOne;
+        } else if (curPortNumber == 1) {
+            curPort = serialPortTwo;
+        } else if (curPortNumber == 2) {
+            curPort = serialPortThree;
+        } else if (curPortNumber == 3) {
+            curPort = serialPortFour;
+        } else if (curPortNumber == 4) {
+            discoveryActive = false;
+            Serial.println("Port id is : " + portids[1]);
+        }
+
+        Serial.println("curPortNumber is " + String(curPortNumber));
+        Serial.println("discoveryActive " + String(discoveryActive));
+
+        if (discoveryActive == false)
+        {
+            return;
+        }
+
+        curPort.begin(9600);
+        curPort.print('?');
+        curPort.print('_');
+        Serial.println("1 listen: " + String(serialPortOne.isListening()));
+        Serial.println("2 listen: " + String(serialPortTwo.isListening()));
+        waitingForAnswer = true;
+        waitingForAnswerMillis = millis();
+        return;
+    }
+}
+
+void loop()
+{
+    if (discoveryActive == true)
+    {
+        discoveryUtil();
+    }
+    checkForBtnActive();
+
+    if (serialPortOne.available())
+    {
+        Serial.print((char)serialPortOne.read());
     }
 }

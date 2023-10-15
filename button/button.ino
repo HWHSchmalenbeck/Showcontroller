@@ -294,6 +294,15 @@ void loop() {
                 partyActive = true;
                 partyMillis = millis();
             }
+        } else if (readid == '?' && readinst == '_') {
+            
+            // Discovery send Stats
+
+            // Send type Button
+
+            comSerial.print("B");
+
+            comSerial.print(btnId);
         }
     }
 
