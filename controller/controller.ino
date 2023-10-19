@@ -412,7 +412,16 @@ void handleSelection(char act, int dir = 0)
                 renderDebugPage();
                 return;
             case 3:
-                // ToDo: Add Rediscover
+                for (int i = 0; i <= 3; i++)
+                {
+                    porttype[i] = 0;
+                    portids[i] = "";
+                }
+                curPortNumber = -1;
+                waitingForAnswer = false;
+                discoveryActive = true;
+                renderHome();
+                
                 return;
             }
         }

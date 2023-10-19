@@ -336,6 +336,22 @@ void loop() {
                 setBtnColor(YELLOW);
                 pressMillis = 0;
                 curBtnStatus = 0;
+
+            // Soft Reset
+
+             } else if (readinst == 's') {
+
+                // DEBUG
+                Serial.println("Soft Resetting due to Serial");
+
+                partyActive = false;
+                partyMillis = 0;
+                blinkType = 0;
+                blinkState = false;
+                blinkMillis = 0;
+                curStatus = 'a';
+                pressMillis = 0;
+                curBtnStatus = 0;
             
             // Party Mode
 
