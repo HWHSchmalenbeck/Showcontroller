@@ -89,9 +89,9 @@ int curPage = -1;
  *
  */
 
-String areaname[] = {"Eingang", "Hexe 1", "Hexe 2", "Labor", "Friedhof", "Ausgang"};
+String areaname[6] = {"Eingang", "Hexe 1", "Hexe 2", "Labor", "Friedhof", "Ausgang"};
 
-char arealinking[] = {'A', 'B', 'C', 'D', 'E', 'F'};
+char arealinking[6] = {'A', 'B', 'C', 'D', 'E', 'F'};
 
 /*
  *
@@ -116,11 +116,11 @@ unsigned long waitingForAnswerMillis = 0;
  *
  *  Port type
  *
- *  B -> Button (One id)
- *  S -> Switch (String of ids)
+ *  1 B -> Button (One id)
+ *  2 S -> Switch (String of ids)
  *
  */
-char porttype[] = {};
+int porttype[4] = {};
 
 /*
  *
@@ -144,9 +144,9 @@ String portids[4] = {};
  *
  */
 
-char btnStatus[] = {};
+char btnStatus[10] = {};
 
-bool btnBypass[] = {};
+bool btnBypass[6] = {};
 
 /*
  *
@@ -210,11 +210,8 @@ void setup()
     /*serialPortOne.begin(9600);
     serialPortTwo.begin(9600);
     serialPortOne.end();*/
-    //serialPortThree.begin(9600);
-    //serialPortFour.begin(9600);
-
-    Serial.println("1 listen: " + String(serialPortOne.isListening()));
-    Serial.println("2 listen: " + String(serialPortTwo.isListening()));
+    // serialPortThree.begin(9600);
+    // serialPortFour.begin(9600);
 
     // PinModes
     pinMode(start_red, OUTPUT);
@@ -249,11 +246,11 @@ void setup()
     tft.fillScreen(LCD_BLACK);
     display_startup();
     delay(500);
-    btnStatus[arealinking[0]] = 'a';
-    btnStatus[arealinking[1]] = 'b';
-    btnStatus[arealinking[2]] = 'c';
-    btnStatus[arealinking[3]] = 'd';
-    btnStatus[arealinking[4]] = 'e';
+    /*btnStatus[arealinking[0] - 'A'] = 'a';
+    btnStatus[arealinking[1] - 'A'] = 'b';
+    btnStatus[arealinking[2] - 'A'] = 'c';
+    btnStatus[arealinking[3] - 'A'] = 'd';
+    btnStatus[arealinking[4] - 'A'] = 'e';*/
 
     discoveryActive = true;
 
@@ -263,49 +260,6 @@ void setup()
     // digitalWrite(crisis_red, HIGH);
 
     renderHome();
-}
-
-bool checkForAttachmentPort(int number)
-{
-    bool error = false;
-
-    switch (number)
-    {
-    case 1:
-        curPort = SoftwareSerial(serialPortOne);
-        return;
-    case 2:
-        curPort = SoftwareSerial(serialPortTwo);
-        return;
-    case 3:
-        curPort = SoftwareSerial(serialPortThree);
-        return;
-    case 4:
-        curPort = SoftwareSerial(serialPortFour);
-        return;
-    default:
-        error = true;
-        return;
-    }
-
-    if (error == true)
-    {
-        return false;
-    }
-
-    serialPortTwo.listen();
-    curPort.print('?');
-    curPort.print('_');
-
-    while (!curPort.available())
-    {
-        delay(1);
-    }
-
-    if (curPort.available())
-    {
-        char anstype = curPort.read();
-    }
 }
 
 void display_startup()
@@ -566,6 +520,48 @@ void handleSelection(char act, int dir = 0)
     return;
 }
 
+void renderHomeStatus() {
+    uint16_t areacolor;
+
+    if (curPage != -1) { return; }
+
+    // Top Left Status
+    areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
+    tft.fillRect(15, 20, 26, 26, areacolor);
+
+    if (curPage != -1) { return; }
+
+    // Middle Left Status
+    areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
+    tft.fillRect(15, 76, 26, 26, areacolor);
+
+    if (curPage != -1) { return; }
+
+    // Bottom Left Status
+    areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
+    tft.fillRect(15, 132, 26, 26, areacolor);
+
+    if (curPage != -1) { return; }
+
+    // Top Right Status
+    areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
+    tft.fillRect(170, 20, 26, 26, areacolor);
+
+    if (curPage != -1) { return; }
+
+    // Middle Right Status
+    areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
+    tft.fillRect(170, 76, 26, 26, areacolor);
+
+    if (curPage != -1) { return; }
+
+    // Bottom Right Status
+    areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
+    tft.fillRect(170, 132, 26, 26, areacolor);
+
+    return;
+}
+
 void renderHome()
 {
     handleSelection('c');
@@ -573,54 +569,56 @@ void renderHome()
     // Fill screen with White
     tft.fillScreen(LCD_WHITE);
 
-    uint16_t areacolor;
+    //uint16_t areacolor;
     // Top Left Status
-    areacolor = getcolor(btnStatus[arealinking[0]]);
-    tft.fillRect(15, 20, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
+    //tft.fillRect(15, 20, 26, 26, areacolor);
     tft.setCursor(52, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[0]);
 
     // Middle Left Status
-    areacolor = getcolor(btnStatus[arealinking[2]]);
-    tft.fillRect(15, 76, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
+    //tft.fillRect(15, 76, 26, 26, areacolor);
     tft.setCursor(52, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[2]);
 
     // Bottom Left Status
-    areacolor = getcolor(btnStatus[arealinking[4]]);
-    tft.fillRect(15, 132, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
+    //tft.fillRect(15, 132, 26, 26, areacolor);
     tft.setCursor(52, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[4]);
 
     // Top Right Status
-    areacolor = getcolor(btnStatus[arealinking[1]]);
-    tft.fillRect(170, 20, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
+    //tft.fillRect(170, 20, 26, 26, areacolor);
     tft.setCursor(207, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[1]);
 
     // Middle Right Status
-    areacolor = getcolor(btnStatus[arealinking[3]]);
-    tft.fillRect(170, 76, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
+    //tft.fillRect(170, 76, 26, 26, areacolor);
     tft.setCursor(207, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[3]);
 
     // Bottom Right Status
-    areacolor = getcolor(btnStatus[arealinking[5]]);
-    tft.fillRect(170, 132, 26, 26, areacolor);
+    //areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
+    //tft.fillRect(170, 132, 26, 26, areacolor);
     tft.setCursor(207, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[5]);
+
+    renderHomeStatus();
 
     // Show Info Line
     tft.drawFastHLine(0, 190, 360, LCD_BLACK);
@@ -665,7 +663,7 @@ void renderButtonPage(int number)
     tft.drawRect(259, 96, 30, 30, LCD_BLACK);
     tft.setCursor(269, 104);
     tft.setTextSize(2);
-    tft.print(btnStatus[arealinking[number]]);
+    tft.print(btnStatus[arealinking[number] - 'A']);
 
     tft.drawRect(5, 160, 150, 75, LCD_BLACK);
     tft.drawRect(19, 186, 27, 22, LCD_BLACK);
@@ -1134,7 +1132,7 @@ void checkForBtnActive()
     return;
 }
 
-void discoveryUtil()
+void communicationUtil()
 {
     if (waitingForAnswer == true)
     {
@@ -1142,34 +1140,63 @@ void discoveryUtil()
         {
             Serial.println("Got answer from curPort");
 
-            char curPortType = curPort.read();
-            char curPortCount;
-            char curPortBId;
-            String curPortSId = "";
-
-            delay(10);
-
-            if (curPortType == 'B')
+            if (discoveryActive == true)
             {
-                Serial.println("curPort is Button");
-                curPortBId = curPort.read();
-                portids[curPortNumber] = String(curPortBId);
-                Serial.println("curPortId is " + String(curPortBId));
-            }
-            else if (curPortType == 'S')
-            {
-                curPortCount = curPort.read();
-                int calcNum = curPortCount - '0';
 
-                for (int i = 1; calcNum; i++)
+                char curPortType = curPort.read();
+                char curPortCount;
+                char curPortBId;
+                String curPortSId;
+
+                delay(10);
+
+                if (curPortType == 'B')
                 {
-                    char readId = curPort.read();
-                    curPortSId = curPortBId + readId;
+                    Serial.println("curPort is Button");
+                    curPortBId = curPort.read();
+                    portids[curPortNumber] = String(curPortBId);
+                    Serial.println("curPortId is " + String(curPortBId));
+                    porttype[curPortNumber] = 1;
                 }
-                portids[curPortNumber] = curPortSId;
-            }
+                else if (curPortType == 'S')
+                {
+                    curPortCount = curPort.read();
+                    int calcNum = curPortCount - '0';
 
-            porttype[curPortNumber] = curPortType;
+                    for (int i = 1; calcNum; i++)
+                    {
+                        char readId = curPort.read();
+                        curPortSId = curPortSId + readId;
+                    }
+                    portids[curPortNumber] = curPortSId;
+                    porttype[curPortNumber] = 2;
+                }
+                
+                Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
+            }
+            else
+            {
+                //Serial.println("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+                if (porttype[curPortNumber] == 1)
+                {
+                    char readstatus = curPort.read();
+                    String readstatustest = String(readstatus);
+                    readstatustest.toLowerCase();
+
+                    Serial.println("Got status " + String(readstatus));
+
+                    if (String(readstatus) == readstatustest)
+                    {
+                        Serial.println("Read status: " + String(readstatus));
+
+                        btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = readstatus;
+                    }
+                    else
+                    {
+                        btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = 'n';
+                    }
+                }
+            }
 
             waitingForAnswer = false;
         }
@@ -1177,9 +1204,17 @@ void discoveryUtil()
         if (waitingForAnswer == true && millis() - waitingForAnswerMillis >= 1000)
         {
             Serial.println("Got no answer from curPort");
-            porttype[curPortNumber] = 'N';
+            if (discoveryActive == true)
+            {
+                porttype[curPortNumber] = 0;
+            }
+            else
+            {
+                btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = 'n';
+            }
             waitingForAnswer = false;
         }
+        delay(20);
     }
     else
     {
@@ -1187,34 +1222,60 @@ void discoveryUtil()
         delay(10);
         curPortNumber += 1;
 
-        Serial.println("curPortNumber " + String(curPortNumber));
-
-        if (curPortNumber == 0) {
-            curPort = serialPortOne;
-        } else if (curPortNumber == 1) {
-            curPort = serialPortTwo;
-        } else if (curPortNumber == 2) {
-            curPort = serialPortThree;
-        } else if (curPortNumber == 3) {
-            curPort = serialPortFour;
-        } else if (curPortNumber == 4) {
-            discoveryActive = false;
-            Serial.println("Port id is : " + portids[1]);
-        }
-
-        Serial.println("curPortNumber is " + String(curPortNumber));
-        Serial.println("discoveryActive " + String(discoveryActive));
-
-        if (discoveryActive == false)
+        Serial.println("Port type of " + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+        if (discoveryActive == false && porttype[curPortNumber] == 0)
         {
             return;
         }
 
+        if (curPortNumber == 0)
+        {
+            curPort = serialPortOne;
+        }
+        else if (curPortNumber == 1)
+        {
+            curPort = serialPortTwo;
+        }
+        else if (curPortNumber == 2)
+        {
+            curPort = serialPortThree;
+        }
+        else if (curPortNumber == 3)
+        {
+            curPort = serialPortFour;
+        }
+        else if (curPortNumber >= 4)
+        {
+            if (discoveryActive == false && curPage == -1) {
+                renderHomeStatus();
+            }
+            discoveryActive = false;
+            curPortNumber = -1;
+            return;
+        }
+
+        Serial.println("curPortNumber is " + String(curPortNumber));
+
         curPort.begin(9600);
-        curPort.print('?');
-        curPort.print('_');
-        Serial.println("1 listen: " + String(serialPortOne.isListening()));
-        Serial.println("2 listen: " + String(serialPortTwo.isListening()));
+        if (discoveryActive == true)
+        {
+            curPort.print('?');
+            curPort.print('_');
+        }
+        else
+        {
+            char idtosend;
+            if (porttype[curPortNumber] == 2)
+            {
+                idtosend = 'S';
+            }
+            else
+            {
+                idtosend = portids[curPortNumber].c_str()[0];
+            }
+            curPort.print(idtosend);
+            curPort.print('a');
+        }
         waitingForAnswer = true;
         waitingForAnswerMillis = millis();
         return;
@@ -1223,10 +1284,7 @@ void discoveryUtil()
 
 void loop()
 {
-    if (discoveryActive == true)
-    {
-        discoveryUtil();
-    }
+    communicationUtil();
     checkForBtnActive();
 
     if (serialPortOne.available())

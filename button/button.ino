@@ -18,7 +18,7 @@
     * 
 */
 
-char btnId = 'C';
+char btnId = 'D';
 int btnPin = 8;
 
 int ledPinR = 3;
@@ -61,6 +61,17 @@ int partyState = 0;
 unsigned long partyMillis = 0;
 
 unsigned long pressMillis = 0;
+
+// Standby anim
+
+int fadevarr = 15;
+int fadevarg = 15;
+int fadevarb = 15;
+int fadeamountr = 3;
+int fadeamountg = 4;
+int fadeamountb = 5;
+
+unsigned long standbyMillis = 0;
 
 const int RED[3] = {255,0,0};
 const int ORANGE[3] = {255,50,0};
@@ -109,6 +120,29 @@ void setBtnColor(const int color[3]) {
     analogWrite(ledPinG, color[1]);
     analogWrite(ledPinB, color[2]);
     return;
+}
+
+void handleStandby() {
+    fadevarr = fadevarr + fadeamountr;
+      fadevarg = fadevarg + fadeamountg;
+      fadevarb = fadevarb + fadeamountb;
+
+      if (fadevarr < 10 || fadevarr > 145) {
+        fadeamountr = -fadeamountr;
+      }
+
+      if (fadevarg <= 10 || fadevarg >= 145) {
+        fadeamountg = -fadeamountg;
+      }
+
+      if (fadevarb <= 10 || fadevarb >= 145) {
+        fadeamountb = -fadeamountb;
+      }
+
+      analogWrite(ledPinG, fadevarg);
+      analogWrite(ledPinR, fadevarr);
+      analogWrite(ledPinB, fadevarb);
+      return;
 }
 
 void handlePartyMode() {
@@ -163,7 +197,7 @@ void handlePartyMode() {
 void handleBlink() {
 
     // DEBUG
-    Serial.println("Handle blink.");
+    //Serial.println("Handle blink.");
 
     if (blinkState == false) {
         switch (blinkType) {
@@ -171,25 +205,32 @@ void handleBlink() {
                 setBtnColor(PINK);
 
                 // DEBUG
-                Serial.println("Blinking Pink");
+                //Serial.println("Blinking Pink");
                 break;
             case 2:
                 setBtnColor(ORANGE);
 
                 // DEBUG
-                Serial.println("Blinking Orange");
+                //Serial.println("Blinking Orange");
                 break;
             case 3:
                 setBtnColor(YELLOW);
 
                 // DEBUG
-                Serial.println("Blinking Yellow");
+                //Serial.println("Blinking Yellow");
                 break;
             case 4:
                 setBtnColor(RED);
 
                 // DEBUG
-                Serial.println("Blinking Red");
+                //Serial.println("Blinking Red");
+                break;
+            case 5:
+                setBtnColor(GREEN);
+
+                // DEBUG
+                //Serial.println("Blinking Green");
+                break;
         }
         blinkState = true;
     } else {
@@ -197,7 +238,7 @@ void handleBlink() {
         blinkState = false;
 
         // DEBUG
-        Serial.println("Blinking Black");
+        //Serial.println("Blinking Black");
     }
     return;
 }
@@ -215,7 +256,7 @@ void loop() {
     if (blinkType != 0 && millis() - blinkMillis >= durBlinkColor && partyActive == false) {
 
         // DEBUG
-        Serial.println("Running blink; Dur: " + String(millis() - blinkMillis));
+        //Serial.println("Running blink; Dur: " + String(millis() - blinkMillis));
 
         handleBlink();
         blinkMillis = millis();
@@ -227,7 +268,7 @@ void loop() {
         partyMillis = millis();
 
         // DEBUG
-        Serial.println("Running party");
+        //Serial.println("Running party");
     }
 
     // Serial feedback
@@ -254,6 +295,18 @@ void loop() {
 
             if (readinst == 'a' && readid != 'Y') {
                 comSerial.print(curStatus);
+            
+            // Other buttons pushed
+
+            } else if (readinst == 'b') {
+
+                // DEBUG
+                Serial.println("Blinking green due to other buttons pushed.");
+
+                blinkType = 5;
+                blinkMillis = 0;
+                partyActive = false;
+                setBtnColor(GREEN);
 
             // Crisis mode
 
@@ -356,6 +409,7 @@ void loop() {
             Serial.println("Running crisis stop due to btnpress");
 
             curStatus = 'a';
+            blinkType = 0;
             setBtnColor(RED);
         } else if (dur >= durCrisisPress && curBtnStatus == 2) {
 
@@ -389,5 +443,11 @@ void loop() {
         pressMillis = 0;
         setBtnColor(RED);
         delay(500);
+    }
+
+    // Handle Standby
+    if (curStatus == 'a' && blinkType == 0 && partyActive == false && millis() - standbyMillis >= 200 && digitalRead(btnPin) == LOW && pressMillis == 0) {
+        handleStandby();
+        standbyMillis = millis();
     }
 }
