@@ -414,6 +414,31 @@ void handleSelection(char act, int dir = 0)
             case 3:
                 for (int i = 0; i <= 3; i++)
                 {
+                    if (porttype[i] == 2)
+                    {
+                        if (i == 0)
+                        {
+                            curPort = serialPortOne;
+                        }
+                        else if (i == 1)
+                        {
+                            curPort = serialPortTwo;
+                        }
+                        else if (i == 2)
+                        {
+                            curPort = serialPortThree;
+                        }
+                        else if (i == 3)
+                        {
+                            curPort = serialPortFour;
+                        }
+
+                        curPort.begin(9600);
+                        curPort.print('!');
+                        curPort.print('_');
+                        delay(20);
+                        curPort.end();
+                    }
                     porttype[i] = 0;
                     portids[i] = "";
                 }
@@ -421,7 +446,7 @@ void handleSelection(char act, int dir = 0)
                 waitingForAnswer = false;
                 discoveryActive = true;
                 renderHome();
-                
+
                 return;
             }
         }
@@ -529,40 +554,59 @@ void handleSelection(char act, int dir = 0)
     return;
 }
 
-void renderHomeStatus() {
+void renderHomeStatus()
+{
     uint16_t areacolor;
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Top Left Status
     areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
     tft.fillRect(15, 20, 26, 26, areacolor);
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Middle Left Status
     areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
     tft.fillRect(15, 76, 26, 26, areacolor);
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Bottom Left Status
     areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
     tft.fillRect(15, 132, 26, 26, areacolor);
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Top Right Status
     areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
     tft.fillRect(170, 20, 26, 26, areacolor);
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Middle Right Status
     areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
     tft.fillRect(170, 76, 26, 26, areacolor);
 
-    if (curPage != -1) { return; }
+    if (curPage != -1)
+    {
+        return;
+    }
 
     // Bottom Right Status
     areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
@@ -578,50 +622,50 @@ void renderHome()
     // Fill screen with White
     tft.fillScreen(LCD_WHITE);
 
-    //uint16_t areacolor;
-    // Top Left Status
-    //areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
-    //tft.fillRect(15, 20, 26, 26, areacolor);
+    // uint16_t areacolor;
+    //  Top Left Status
+    // areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
+    // tft.fillRect(15, 20, 26, 26, areacolor);
     tft.setCursor(52, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[0]);
 
     // Middle Left Status
-    //areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
-    //tft.fillRect(15, 76, 26, 26, areacolor);
+    // areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
+    // tft.fillRect(15, 76, 26, 26, areacolor);
     tft.setCursor(52, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[2]);
 
     // Bottom Left Status
-    //areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
-    //tft.fillRect(15, 132, 26, 26, areacolor);
+    // areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
+    // tft.fillRect(15, 132, 26, 26, areacolor);
     tft.setCursor(52, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[4]);
 
     // Top Right Status
-    //areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
-    //tft.fillRect(170, 20, 26, 26, areacolor);
+    // areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
+    // tft.fillRect(170, 20, 26, 26, areacolor);
     tft.setCursor(207, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[1]);
 
     // Middle Right Status
-    //areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
-    //tft.fillRect(170, 76, 26, 26, areacolor);
+    // areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
+    // tft.fillRect(170, 76, 26, 26, areacolor);
     tft.setCursor(207, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
     tft.print(areaname[3]);
 
     // Bottom Right Status
-    //areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
-    //tft.fillRect(170, 132, 26, 26, areacolor);
+    // areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
+    // tft.fillRect(170, 132, 26, 26, areacolor);
     tft.setCursor(207, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
@@ -1180,12 +1224,12 @@ void communicationUtil()
                     portids[curPortNumber] = curPortSId;
                     porttype[curPortNumber] = 2;
                 }
-                
+
                 Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
             }
             else
             {
-                //Serial.println("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+                // Serial.println("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
                 if (porttype[curPortNumber] == 1)
                 {
                     char readstatus = curPort.read();
@@ -1255,7 +1299,8 @@ void communicationUtil()
         }
         else if (curPortNumber >= 4)
         {
-            if (discoveryActive == false && curPage == -1) {
+            if (discoveryActive == false && curPage == -1)
+            {
                 renderHomeStatus();
             }
             discoveryActive = false;
