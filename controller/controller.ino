@@ -111,6 +111,7 @@ int curPortNumber = -1;
 
 bool waitingForAnswer = false;
 unsigned long waitingForAnswerMillis = 0;
+int maxWaitingForAnswerMillis = 1000;
 
 /*
  *
@@ -148,6 +149,8 @@ char btnStatus[10] = {};
 
 bool btnBypass[6] = {};
 
+bool btnManualActivation[6] = {};
+
 /*
  *
  *  Button status colors
@@ -168,6 +171,31 @@ uint16_t statusDcolor = LCD_BLUE;
 uint16_t statusEcolor = LCD_ORANGE;
 uint16_t statusNcolor = LCD_BLACK;
 
+/*
+ *
+ * Controller status
+ *
+ * a    ->  Waiting for activation  (LED Yellow)
+ * b    ->  Show running            (LED Green)
+ * c    ->  Crisis mode active      (LED Pink)
+ * d    ->  Discovery running       (LED Orange)
+ * f    ->  Failure                 (LED Blue)
+ *
+ */
+
+char controllerStatus = 'a';
+
+const int STATUS_RED[3] = {255, 0, 0};
+const int STATUS_ORANGE[3] = {255, 50, 0};
+const int STATUS_YELLOW[3] = {255, 255, 0};
+const int STATUS_GREEN[3] = {0, 255, 0};
+// const int STATUS_CYAN[3] = {0,255,255};
+const int STATUS_BLUE[3] = {0, 0, 255};
+// const int STATUS_PURPLE[3] = {128,0,128};
+const int STATUS_PINK[3] = {255, 20, 147};
+// const int STATUS_WHITE[3] = {255,255,255};
+const int STATUS_BLACK[3] = {0, 0, 0};
+
 // Action locks
 
 unsigned long page_btn_millis = 0;
@@ -179,6 +207,9 @@ unsigned long nav_right_btn_millis = 0;
 unsigned long com_led_disable_btn_millis = 0;
 unsigned long crisis_btn_millis = 0;
 unsigned long start_btn_millis = 0;
+
+unsigned long communication_util_millis = 0;
+unsigned long status_led_change_millis = 0;
 
 // Debug states
 
@@ -198,8 +229,12 @@ extern uint8_t logoeye[];
 // Tft display
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
-// Discovery values
+// MIsc values
 bool discoveryActive = false;
+bool comLEDDisabled = false;
+bool rxLEDState = false;
+bool txLEDState = false;
+unsigned long lastComLEDchange = 0;
 
 void setup()
 {
@@ -253,6 +288,7 @@ void setup()
     btnStatus[arealinking[4] - 'A'] = 'e';*/
 
     discoveryActive = true;
+    controllerStatus = 'd';
 
     // Make buttons glow
 
@@ -288,7 +324,52 @@ void display_startup()
     return;
 }
 
-uint16_t getcolor(char status)
+void setStatusLEDColor()
+{
+    int redColor = 0;
+    int greenColor = 0;
+    int blueColor = 0;
+    switch (controllerStatus)
+    {
+    case 'a':
+        // Waiting for activation
+        redColor = STATUS_YELLOW[0];
+        greenColor = STATUS_YELLOW[1];
+        blueColor = STATUS_YELLOW[2];
+        break;
+    case 'b':
+        // Show running
+        redColor = STATUS_GREEN[0];
+        greenColor = STATUS_GREEN[1];
+        blueColor = STATUS_GREEN[2];
+        break;
+    case 'c':
+        // Crisis mode active
+        redColor = STATUS_PINK[0];
+        greenColor = STATUS_PINK[1];
+        blueColor = STATUS_PINK[2];
+        break;
+    case 'd':
+        // Discovery running
+        redColor = STATUS_ORANGE[0];
+        greenColor = STATUS_ORANGE[1];
+        blueColor = STATUS_ORANGE[2];
+        break;
+    case 'f':
+        // Failure
+        redColor = STATUS_BLUE[0];
+        greenColor = STATUS_BLUE[1];
+        blueColor = STATUS_BLUE[2];
+        break;
+    }
+
+    analogWrite(status_led_red, redColor);
+    analogWrite(status_led_green, greenColor);
+    analogWrite(status_led_blue, blueColor);
+    return;
+}
+
+uint16_t getLCDColor(char status)
 {
     switch (status)
     {
@@ -340,13 +421,16 @@ void renderSelection(int id, bool negative = false)
         switch (id)
         {
         case 1:
-            tft.drawRect(59, 69, 202, 42, selectionColor);
+            tft.drawRect(59, 59, 202, 42, selectionColor);
             return;
         case 2:
-            tft.drawRect(59, 119, 202, 42, selectionColor);
+            tft.drawRect(59, 109, 202, 42, selectionColor);
             return;
         case 3:
-            tft.drawRect(59, 169, 202, 42, selectionColor);
+            tft.drawRect(59, 159, 202, 42, selectionColor);
+            return;
+        case 4:
+            tft.drawRect(109, 209, 102, 22, selectionColor);
             return;
         }
     }
@@ -395,7 +479,7 @@ void handleSelection(char act, int dir = 0)
 {
     int btnPageSelectMax = 3;
     int homePageSelectMax = 6;
-    int settingsPageSelectMax = 3;
+    int settingsPageSelectMax = 4;
 
     if (act == 'u')
     {
@@ -445,8 +529,12 @@ void handleSelection(char act, int dir = 0)
                 curPortNumber = -1;
                 waitingForAnswer = false;
                 discoveryActive = true;
+                controllerStatus = 'd';
                 renderHome();
 
+                return;
+            case 4:
+                // ToDo: Add Reset Status
                 return;
             }
         }
@@ -484,6 +572,8 @@ void handleSelection(char act, int dir = 0)
                 }
                 return;
             case 3:
+                // Set button to have started
+                btnManualActivation[curPage] = true;
                 return;
             }
         }
@@ -564,7 +654,7 @@ void renderHomeStatus()
     }
 
     // Top Left Status
-    areacolor = getcolor(btnStatus[arealinking[0] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[0] - 'A']);
     tft.fillRect(15, 20, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -573,7 +663,7 @@ void renderHomeStatus()
     }
 
     // Middle Left Status
-    areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[2] - 'A']);
     tft.fillRect(15, 76, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -582,7 +672,7 @@ void renderHomeStatus()
     }
 
     // Bottom Left Status
-    areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[4] - 'A']);
     tft.fillRect(15, 132, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -591,7 +681,7 @@ void renderHomeStatus()
     }
 
     // Top Right Status
-    areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[1] - 'A']);
     tft.fillRect(170, 20, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -600,7 +690,7 @@ void renderHomeStatus()
     }
 
     // Middle Right Status
-    areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[3] - 'A']);
     tft.fillRect(170, 76, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -609,7 +699,7 @@ void renderHomeStatus()
     }
 
     // Bottom Right Status
-    areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
+    areacolor = getLCDColor(btnStatus[arealinking[5] - 'A']);
     tft.fillRect(170, 132, 26, 26, areacolor);
 
     return;
@@ -749,17 +839,22 @@ void renderSettingsPage()
 
     tft.setTextSize(2);
 
-    tft.drawRect(60, 70, 200, 40, LCD_BLACK);
-    tft.setCursor(118, 82);
+    tft.drawRect(60, 60, 200, 40, LCD_BLACK);
+    tft.setCursor(118, 72);
     tft.print("Credits");
 
-    tft.drawRect(60, 120, 200, 40, LCD_BLACK);
-    tft.setCursor(131, 132);
+    tft.drawRect(60, 110, 200, 40, LCD_BLACK);
+    tft.setCursor(131, 122);
     tft.print("Debug");
 
-    tft.drawRect(60, 170, 200, 40, LCD_BLACK);
-    tft.setCursor(97, 182);
+    tft.drawRect(60, 160, 200, 40, LCD_BLACK);
+    tft.setCursor(97, 172);
     tft.print("Re-Discover");
+
+    tft.drawRect(110, 210, 100, 20, LCD_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(125, 217);
+    tft.print("Reset Status");
     return;
 }
 
@@ -924,6 +1019,8 @@ void handleNavRightBtn()
             // Make buttons glow again
             // digitalWrite(start_green, HIGH);
             // digitalWrite(crisis_red, HIGH);
+            rxLEDState = false;
+            txLEDState = false;
             curPage = -1;
             renderHome();
             return;
@@ -985,7 +1082,14 @@ void handleComLedDisableBtn()
         tft.fillRect(270, 208, 20, 20, LCD_GREEN);
         return;
     }
-    // Disable the com leds
+    if (comLEDDisabled == true)
+    {
+        comLEDDisabled = false;
+    }
+    else
+    {
+        comLEDDisabled = true;
+    }
     return;
 }
 
@@ -1185,6 +1289,47 @@ void checkForBtnActive()
     return;
 }
 
+void setComLED(String led)
+{
+    if (comLEDDisabled == true)
+    {
+        return;
+    }
+    if (led == "tx")
+    {
+        lastComLEDchange = millis();
+        if (txLEDState == false)
+        {
+            txLEDState = true;
+            digitalWrite(tx_led, HIGH);
+            return;
+        }
+        else
+        {
+            txLEDState = false;
+            digitalWrite(tx_led, LOW);
+            return;
+        }
+    }
+    else if (led == "rx")
+    {
+        lastComLEDchange = millis();
+        if (rxLEDState == false)
+        {
+            rxLEDState = true;
+            digitalWrite(rx_led, HIGH);
+            return;
+        }
+        else
+        {
+            rxLEDState = false;
+            digitalWrite(rx_led, LOW);
+            return;
+        }
+    }
+    return;
+}
+
 void communicationUtil()
 {
     if (waitingForAnswer == true)
@@ -1197,6 +1342,7 @@ void communicationUtil()
             {
 
                 char curPortType = curPort.read();
+                setComLED("rx");
                 char curPortCount;
                 char curPortBId;
                 String curPortSId;
@@ -1206,6 +1352,7 @@ void communicationUtil()
                 if (curPortType == 'B')
                 {
                     Serial.println("curPort is Button");
+                    setComLED("rx");
                     curPortBId = curPort.read();
                     portids[curPortNumber] = String(curPortBId);
                     Serial.println("curPortId is " + String(curPortBId));
@@ -1213,6 +1360,7 @@ void communicationUtil()
                 }
                 else if (curPortType == 'S')
                 {
+                    setComLED("rx");
                     curPortCount = curPort.read();
                     int calcNum = curPortCount - '0';
 
@@ -1225,13 +1373,14 @@ void communicationUtil()
                     porttype[curPortNumber] = 2;
                 }
 
-                Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
+                // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
             }
             else
             {
                 // Serial.println("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
                 if (porttype[curPortNumber] == 1)
                 {
+                    setComLED("rx");
                     char readstatus = curPort.read();
                     String readstatustest = String(readstatus);
                     readstatustest.toLowerCase();
@@ -1249,12 +1398,16 @@ void communicationUtil()
                         btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = 'n';
                     }
                 }
+                else if (porttype[curPortNumber] == 2)
+                {
+                    // ToDo: Add Switch handling
+                }
             }
 
             waitingForAnswer = false;
         }
 
-        if (waitingForAnswer == true && millis() - waitingForAnswerMillis >= 1000)
+        if (waitingForAnswer == true && millis() - waitingForAnswerMillis >= maxWaitingForAnswerMillis)
         {
             Serial.println("Got no answer from curPort");
             if (discoveryActive == true)
@@ -1275,7 +1428,7 @@ void communicationUtil()
         delay(10);
         curPortNumber += 1;
 
-        Serial.println("Port type of " + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+        // Serial.println("Port type of " + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
         if (discoveryActive == false && porttype[curPortNumber] == 0)
         {
             return;
@@ -1303,6 +1456,10 @@ void communicationUtil()
             {
                 renderHomeStatus();
             }
+            else if (discoveryActive == true)
+            {
+                controllerStatus = 'a';
+            }
             discoveryActive = false;
             curPortNumber = -1;
             return;
@@ -1313,6 +1470,7 @@ void communicationUtil()
         curPort.begin(9600);
         if (discoveryActive == true)
         {
+            setComLED("tx");
             curPort.print('?');
             curPort.print('_');
         }
@@ -1327,6 +1485,7 @@ void communicationUtil()
             {
                 idtosend = portids[curPortNumber].c_str()[0];
             }
+            setComLED("tx");
             curPort.print(idtosend);
             curPort.print('a');
         }
@@ -1336,10 +1495,104 @@ void communicationUtil()
     }
 }
 
+void statusCheck()
+{
+    String allIds = "";
+    bool hasFailure = false;
+    bool hasCrisis = false;
+    int areaOneBtns = 0;
+    int areaTwoBtns = 0;
+    for (int i = 0; i <= 3; i++)
+    {
+        allIds = allIds + String(portids[i]);
+    }
+    for (int i = 0; i <= (allIds.length() - 1); i++)
+    {
+        char gotStatus = btnStatus[allIds.charAt(i) - 'A'];
+        if (gotStatus == 'c')
+        {
+            hasCrisis = true;
+            break;
+        }
+        else if (gotStatus == 'd' || gotStatus == 'e')
+        {
+            hasFailure = true;
+        }
+    }
+
+    if (btnStatus[arealinking[0] - 'A'] == 'b' || btnBypass[0] == true)
+    {
+        areaOneBtns += 1;
+    }
+    if (btnStatus[arealinking[1] - 'A'] == 'b' || btnBypass[1] == true)
+    {
+        areaOneBtns += 1;
+    }
+
+    if (btnStatus[arealinking[2] - 'A'] == 'b' || btnBypass[2] == true)
+    {
+        areaTwoBtns += 1;
+    }
+    if (btnStatus[arealinking[3] - 'A'] == 'b' || btnBypass[3] == true)
+    {
+        areaTwoBtns += 1;
+    }
+    if (btnStatus[arealinking[4] - 'A'] == 'b' || btnBypass[4] == true)
+    {
+        areaTwoBtns += 1;
+    }
+    if (btnStatus[arealinking[5] - 'A'] == 'b' || btnBypass[5] == true)
+    {
+        areaTwoBtns += 1;
+    }
+
+    if (areaOneBtns == 1)
+    {
+        // ToDo: Send signal to other button to blink
+    }
+    else if (areaOneBtns == 2)
+    {
+        // ToDo: Reset both buttons
+    }
+
+    if (areaTwoBtns >= 1 && areaTwoBtns <= 3)
+    {
+        // ToDo: Send signal to other buttons to blink
+    }
+    else if (areaTwoBtns == 4)
+    {
+        // ToDo: Start show and reset buttons
+    }
+
+    if (hasFailure == true) {
+        controllerStatus = 'f';
+    }
+    
+    if (hasCrisis == true) {
+        controllerStatus = 'c';
+    }
+}
+
 void loop()
 {
-    communicationUtil();
+    if (discoveryActive == true || millis() - communication_util_millis >= 250)
+    {
+        communication_util_millis = millis();
+        communicationUtil();
+    }
+    if (millis() - status_led_change_millis >= 1000)
+    {
+        setStatusLEDColor();
+    }
     checkForBtnActive();
+
+    if (millis() - lastComLEDchange >= 5000 && (rxLEDState == true || txLEDState == true))
+    {
+        digitalWrite(tx_led, LOW);
+        digitalWrite(rx_led, LOW);
+        rxLEDState = false;
+        txLEDState = false;
+    }
 
     if (serialPortOne.available())
     {
