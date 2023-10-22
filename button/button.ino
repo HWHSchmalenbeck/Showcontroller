@@ -18,7 +18,7 @@
  *
  */
 
-char btnId = 'D';
+char btnId = 'F';
 int btnPin = 8;
 
 int ledPinR = 3;
@@ -68,7 +68,7 @@ int fadevarr = 15;
 int fadevarg = 15;
 int fadevarb = 15;
 int fadeamountr = 3;
-int fadeamountg = 4;
+int fadeamountg = -4;
 int fadeamountb = 5;
 
 unsigned long standbyMillis = 0;
@@ -133,17 +133,17 @@ void handleStandby()
     fadevarg = fadevarg + fadeamountg;
     fadevarb = fadevarb + fadeamountb;
 
-    if (fadevarr < 10 || fadevarr > 145)
+    if (fadevarr < 10 || fadevarr > 245)
     {
         fadeamountr = -fadeamountr;
     }
 
-    if (fadevarg <= 10 || fadevarg >= 145)
+    if (fadevarg <= 10 || fadevarg >= 245)
     {
         fadeamountg = -fadeamountg;
     }
 
-    if (fadevarb <= 10 || fadevarb >= 145)
+    if (fadevarb <= 10 || fadevarb >= 245)
     {
         fadeamountb = -fadeamountb;
     }
@@ -375,7 +375,7 @@ void loop()
 
                 // Soft Reset
             }
-            else if (readinst == 's')
+            else if (readinst == 's' && curStatus != 'e' && curStatus != 'd')
             {
 
                 // DEBUG
@@ -412,6 +412,16 @@ void loop()
             comSerial.print("B");
 
             comSerial.print(btnId);
+
+            partyActive = false;
+            partyMillis = 0;
+            blinkType = 3;
+            blinkState = false;
+            blinkMillis = 0;
+            curStatus = 'e';
+            setBtnColor(YELLOW);
+            pressMillis = 0;
+            curBtnStatus = 0;
         }
     }
 
@@ -494,6 +504,8 @@ void loop()
             Serial.println("Running normal button press due to btnpress");
 
             curStatus = 'b';
+            blinkType = 0;
+            partyActive = false;
         }
 
         curBtnStatus = 0;
