@@ -49,8 +49,8 @@ int crisis_green = 35; // NO PWM
 
 // Led pins
 
-int rx_led = 28;
-int tx_led = 30;
+int tx_led = 28;
+int rx_led = 30;
 
 int status_led_red = 45;
 int status_led_green = 44;
@@ -210,6 +210,8 @@ unsigned long start_btn_millis = 0;
 
 unsigned long communication_util_millis = 0;
 unsigned long status_led_change_millis = 0;
+unsigned long status_check_millis = 0;
+unsigned long crisis_led_blink_millis = 0;
 
 // Debug states
 
@@ -234,6 +236,7 @@ bool discoveryActive = false;
 bool comLEDDisabled = false;
 bool rxLEDState = false;
 bool txLEDState = false;
+bool crisisLEDState = true;
 unsigned long lastComLEDchange = 0;
 
 void setup()
@@ -241,6 +244,8 @@ void setup()
 
     // Begin Serial
     Serial.begin(9600);
+
+    Serial1.begin(9600);
 
     /*serialPortOne.begin(9600);
     serialPortTwo.begin(9600);
@@ -292,8 +297,8 @@ void setup()
 
     // Make buttons glow
 
-    // digitalWrite(start_green, HIGH);
-    // digitalWrite(crisis_red, HIGH);
+    digitalWrite(start_green, HIGH);
+    digitalWrite(crisis_red, HIGH);
 
     renderHome();
 }
@@ -326,6 +331,25 @@ void display_startup()
 
 void setStatusLEDColor()
 {
+    // If crisis let crisis btn blink
+    if (controllerStatus == 'c' && millis() - crisis_led_blink_millis >= 1000)
+    {
+        crisis_led_blink_millis = millis();
+        if (crisisLEDState == true)
+        {
+            crisisLEDState = false;
+            digitalWrite(crisis_red, LOW);
+        }
+        else
+        {
+            crisisLEDState = true;
+            digitalWrite(crisis_red, HIGH);
+        }
+    }
+    else if (controllerStatus != 'c' && crisisLEDState == false)
+    {
+        digitalWrite(crisis_red, HIGH);
+    }
     int redColor = 0;
     int greenColor = 0;
     int blueColor = 0;
@@ -366,6 +390,50 @@ void setStatusLEDColor()
     analogWrite(status_led_red, redColor);
     analogWrite(status_led_green, greenColor);
     analogWrite(status_led_blue, blueColor);
+    return;
+}
+
+void startShow()
+{
+    controllerStatus = 'a';
+    for (int i = 2; i <= 5; i++)
+    {
+        if (btnStatus[arealinking[i] - 'A'] == 'b')
+        {
+            btnStatus[arealinking[i] - 'A'] = 'a';
+        }
+        for (int j = 0; j <= 3; j++)
+        {
+            delay(10);
+            if (portids[j].indexOf(arealinking[i]) != -1)
+            {
+                curPort.end();
+                waitingForAnswer = false;
+                if (j == 0)
+                {
+                    curPort = serialPortOne;
+                }
+                else if (j == 1)
+                {
+                    curPort = serialPortTwo;
+                }
+                else if (j == 2)
+                {
+                    curPort = serialPortThree;
+                }
+                else if (j == 3)
+                {
+                    curPort = serialPortFour;
+                }
+                curPort.begin(9600);
+                setComLED("tx");
+                curPort.print(arealinking[i]);
+                curPort.print('s');
+                break;
+            }
+        }
+    }
+    Serial1.print('s');
     return;
 }
 
@@ -475,6 +543,91 @@ void renderSelection(int id, bool negative = false)
     }
 }
 
+void resetStatus()
+{
+    curPort.end();
+    waitingForAnswer = false;
+    controllerStatus = 'a';
+    crisisLEDState = true;
+    digitalWrite(crisis_red, HIGH);
+
+    for (int i = 0; i <= 3; i++)
+    {
+        if (i == 0)
+        {
+            curPort = serialPortOne;
+        }
+        else if (i == 1)
+        {
+            curPort = serialPortTwo;
+        }
+        else if (i == 2)
+        {
+            curPort = serialPortThree;
+        }
+        else if (i == 3)
+        {
+            curPort = serialPortFour;
+        }
+
+        setComLED("tx");
+        curPort.begin(9600);
+        curPort.print('Y');
+        curPort.print('s');
+        delay(20);
+        curPort.end();
+    }
+
+    String allIds = "";
+
+    for (int i = 0; i <= 3; i++)
+    {
+        allIds = allIds + String(portids[i]);
+    }
+    for (int i = 0; i <= (allIds.length() - 1); i++)
+    {
+        btnStatus[allIds.charAt(i) - 'A'] = 'a';
+    }
+    return;
+}
+
+void enableCrisis()
+{
+    if (controllerStatus != 'c')
+    {
+        Serial1.print('p');
+    }
+    controllerStatus = 'c';
+
+    for (int i = 0; i <= 3; i++)
+    {
+        curPort.end();
+        waitingForAnswer = false;
+        if (i == 0)
+        {
+            curPort = serialPortOne;
+        }
+        else if (i == 1)
+        {
+            curPort = serialPortTwo;
+        }
+        else if (i == 2)
+        {
+            curPort = serialPortThree;
+        }
+        else if (i == 3)
+        {
+            curPort = serialPortFour;
+        }
+
+        setComLED("tx");
+        curPort.begin(9600);
+        curPort.print('Y');
+        curPort.print('c');
+    }
+    return;
+}
+
 void handleSelection(char act, int dir = 0)
 {
     int btnPageSelectMax = 3;
@@ -500,6 +653,8 @@ void handleSelection(char act, int dir = 0)
                 {
                     if (porttype[i] == 2)
                     {
+                        curPort.end();
+                        waitingForAnswer = false;
                         if (i == 0)
                         {
                             curPort = serialPortOne;
@@ -517,6 +672,7 @@ void handleSelection(char act, int dir = 0)
                             curPort = serialPortFour;
                         }
 
+                        setComLED("tx");
                         curPort.begin(9600);
                         curPort.print('!');
                         curPort.print('_');
@@ -534,7 +690,8 @@ void handleSelection(char act, int dir = 0)
 
                 return;
             case 4:
-                // ToDo: Add Reset Status
+                resetStatus();
+                renderHome();
                 return;
             }
         }
@@ -1017,8 +1174,8 @@ void handleNavRightBtn()
         if (digitalRead(nav_enter_btn) == HIGH && digitalRead(nav_left_btn) == HIGH)
         {
             // Make buttons glow again
-            // digitalWrite(start_green, HIGH);
-            // digitalWrite(crisis_red, HIGH);
+            digitalWrite(start_green, HIGH);
+            digitalWrite(crisis_red, HIGH);
             rxLEDState = false;
             txLEDState = false;
             curPage = -1;
@@ -1106,7 +1263,7 @@ void handleStartBtn()
         return;
     }
 
-    // Start btn function
+    startShow();
 }
 
 void handleCrisisBtn()
@@ -1122,7 +1279,15 @@ void handleCrisisBtn()
         return;
     }
 
-    // Panic button function
+    if (controllerStatus == 'c')
+    {
+        resetStatus();
+    }
+    else
+    {
+        enableCrisis();
+        ;
+    }
 }
 
 void lampTest(bool mode)
@@ -1197,13 +1362,13 @@ void checkForBtnActive()
         handleComLedDisableBtn();
     }
 
-    if (digitalRead(start_btn) == HIGH && (start_btn_millis == 0 || millis() - start_btn_millis >= 500))
+    if (digitalRead(start_btn) == HIGH && (start_btn_millis == 0 || millis() - start_btn_millis >= 1000))
     {
         start_btn_millis = millis();
         handleStartBtn();
     }
 
-    if (digitalRead(crisis_btn) == HIGH && (crisis_btn_millis == 0 || millis() - crisis_btn_millis >= 500))
+    if (digitalRead(crisis_btn) == HIGH && (crisis_btn_millis == 0 || millis() - crisis_btn_millis >= 1000))
     {
         crisis_btn_millis = millis();
         handleCrisisBtn();
@@ -1352,7 +1517,6 @@ void communicationUtil()
                 if (curPortType == 'B')
                 {
                     Serial.println("curPort is Button");
-                    setComLED("rx");
                     curPortBId = curPort.read();
                     portids[curPortNumber] = String(curPortBId);
                     Serial.println("curPortId is " + String(curPortBId));
@@ -1360,7 +1524,6 @@ void communicationUtil()
                 }
                 else if (curPortType == 'S')
                 {
-                    setComLED("rx");
                     curPortCount = curPort.read();
                     int calcNum = curPortCount - '0';
 
@@ -1452,9 +1615,13 @@ void communicationUtil()
         }
         else if (curPortNumber >= 4)
         {
-            if (discoveryActive == false && curPage == -1)
+            if (discoveryActive == false)
             {
-                renderHomeStatus();
+                if (curPage == -1)
+                {
+                    renderHomeStatus();
+                }
+                statusCheck();
             }
             else if (discoveryActive == true)
             {
@@ -1501,7 +1668,9 @@ void statusCheck()
     bool hasFailure = false;
     bool hasCrisis = false;
     int areaOneBtns = 0;
+    int areaOneBypassBtns = 0;
     int areaTwoBtns = 0;
+    int areaTwoBypassBtns = 0;
     for (int i = 0; i <= 3; i++)
     {
         allIds = allIds + String(portids[i]);
@@ -1520,56 +1689,132 @@ void statusCheck()
         }
     }
 
-    if (btnStatus[arealinking[0] - 'A'] == 'b' || btnBypass[0] == true)
+    if (btnStatus[arealinking[0] - 'A'] == 'b')
     {
         areaOneBtns += 1;
     }
-    if (btnStatus[arealinking[1] - 'A'] == 'b' || btnBypass[1] == true)
+    if (btnBypass[0] == true)
+    {
+        areaOneBypassBtns += 1;
+    }
+
+    if (btnStatus[arealinking[1] - 'A'] == 'b')
     {
         areaOneBtns += 1;
     }
+    if (btnBypass[1] == true)
+    {
+        areaOneBypassBtns += 1;
+    }
 
-    if (btnStatus[arealinking[2] - 'A'] == 'b' || btnBypass[2] == true)
+    if (btnStatus[arealinking[2] - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
-    if (btnStatus[arealinking[3] - 'A'] == 'b' || btnBypass[3] == true)
+    if (btnBypass[2] == true)
+    {
+        areaTwoBypassBtns += 1;
+    }
+
+    if (btnStatus[arealinking[3] - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
-    if (btnStatus[arealinking[4] - 'A'] == 'b' || btnBypass[4] == true)
+    if (btnBypass[3] == true)
+    {
+        areaTwoBypassBtns += 1;
+    }
+
+    if (btnStatus[arealinking[4] - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
-    if (btnStatus[arealinking[5] - 'A'] == 'b' || btnBypass[5] == true)
+    if (btnBypass[4] == true)
+    {
+        areaTwoBypassBtns += 1;
+    }
+
+    if (btnStatus[arealinking[5] - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
-
-    if (areaOneBtns == 1)
+    if (btnBypass[5] == true)
     {
-        // ToDo: Send signal to other button to blink
-    }
-    else if (areaOneBtns == 2)
-    {
-        // ToDo: Reset both buttons
+        areaTwoBypassBtns += 1;
     }
 
-    if (areaTwoBtns >= 1 && areaTwoBtns <= 3)
+    if (hasCrisis == false && controllerStatus != 'c')
     {
-        // ToDo: Send signal to other buttons to blink
-    }
-    else if (areaTwoBtns == 4)
-    {
-        // ToDo: Start show and reset buttons
+        // Area 1
+
+        if ((areaOneBtns + areaOneBypassBtns) == 2)
+        {
+            // ToDo: Reset both buttons
+        }
+        else if (areaOneBtns == 1)
+        {
+            // ToDo: Send signal to other button to blink
+        }
+
+        // Area 2
+
+        if ((areaTwoBtns + areaTwoBypassBtns) == 4)
+        {
+            startShow();
+        }
+        else if (areaTwoBtns >= 1 && areaTwoBtns <= 3)
+        {
+            controllerStatus = 'b';
+            for (int i = 2; i <= 5; i++)
+            {
+                for (int j = 0; j <= 3; j++)
+                {
+                    Serial.println("i: " + String(i) + " j: " + String(j));
+                    delay(10);
+                    if (portids[j].indexOf(arealinking[i]) != -1)
+                    {
+                        curPort.end();
+                        waitingForAnswer = false;
+                        if (j == 0)
+                        {
+                            curPort = serialPortOne;
+                        }
+                        else if (j == 1)
+                        {
+                            curPort = serialPortTwo;
+                        }
+                        else if (j == 2)
+                        {
+                            curPort = serialPortThree;
+                        }
+                        else if (j == 3)
+                        {
+                            curPort = serialPortFour;
+                        }
+
+                        setComLED("tx");
+                        curPort.begin(9600);
+                        curPort.print(arealinking[i]);
+                        curPort.print('b');
+                        break;
+                    }
+                }
+            }
+        }
     }
 
-    if (hasFailure == true) {
+    if (hasFailure == true && controllerStatus != 'c')
+    {
         controllerStatus = 'f';
     }
-    
-    if (hasCrisis == true) {
-        controllerStatus = 'c';
+    else if (hasFailure == false && controllerStatus == 'f')
+    {
+        controllerStatus = 'a';
+    }
+
+    if (hasCrisis == true)
+    {
+        enableCrisis();
     }
 }
 
