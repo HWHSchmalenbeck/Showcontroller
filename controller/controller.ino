@@ -1820,7 +1820,7 @@ void statusCheck()
 
 void loop()
 {
-    if (discoveryActive == true || millis() - communication_util_millis >= 250)
+    if (discoveryActive == true || millis() - communication_util_millis >= 100)
     {
         communication_util_millis = millis();
         communicationUtil();
@@ -1837,10 +1837,5 @@ void loop()
         digitalWrite(rx_led, LOW);
         rxLEDState = false;
         txLEDState = false;
-    }
-
-    if (serialPortOne.available())
-    {
-        Serial.print((char)serialPortOne.read());
     }
 }
