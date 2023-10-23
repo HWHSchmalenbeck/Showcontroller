@@ -94,6 +94,9 @@ void setup() {
     pinMode(activity_led_four, OUTPUT);
     pinMode(activity_led_five, OUTPUT);
     pinMode(activity_led_up, OUTPUT);
+
+    delay(200);
+    discoveryActive = true;
 }
 
 void toggleActivityLED(int LEDNumber) {
