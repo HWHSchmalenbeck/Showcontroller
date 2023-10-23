@@ -7,7 +7,7 @@ int activity_led_one = 46;
 int activity_led_two = 45;
 int activity_led_three = 44;
 int activity_led_four = 43;
-int activity_led_five = 42;
+int activity_led_five = 4;
 
 // Activity LED millis
 
