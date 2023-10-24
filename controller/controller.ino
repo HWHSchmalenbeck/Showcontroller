@@ -69,6 +69,7 @@ int curSelection = -1;
  *  -2   ->  Settings
  *  -3   ->  Credits
  *  -4   ->  Debug
+ *  -100 ->  Startup screen
  *
  */
 
@@ -135,6 +136,15 @@ int porttype[4] = {};
  */
 
 String portids[4] = {};
+
+/*
+ *
+ *  Port size (only for switches)
+ * 
+ * 
+*/
+
+int portsize[4] = {};
 
 /*
  *
@@ -294,13 +304,12 @@ void setup()
 
     discoveryActive = true;
     controllerStatus = 'd';
+    curPage = -100;
 
     // Make buttons glow
 
     digitalWrite(start_green, HIGH);
     digitalWrite(crisis_red, HIGH);
-
-    renderHome();
 }
 
 void display_startup()
@@ -686,7 +695,9 @@ void handleSelection(char act, int dir = 0)
                 waitingForAnswer = false;
                 discoveryActive = true;
                 controllerStatus = 'd';
-                renderHome();
+                display_startup();
+                curPage = -100;
+                delay(2000);
 
                 return;
             case 4:
@@ -1512,8 +1523,6 @@ void communicationUtil()
                 char curPortBId;
                 String curPortSId;
 
-                delay(10);
-
                 if (curPortType == 'B')
                 {
                     Serial.println("curPort is Button");
@@ -1527,13 +1536,19 @@ void communicationUtil()
                     curPortCount = curPort.read();
                     int calcNum = curPortCount - '0';
 
-                    for (int i = 1; calcNum; i++)
+                    for (int i = 1; i <= calcNum; i++)
                     {
+                        Serial.println("i: " + String(i));
+                        delay(100);
                         char readId = curPort.read();
-                        curPortSId = curPortSId + readId;
+                        curPortSId = curPortSId + String(readId);
+                        Serial.println("Port read: " + String(readId));
                     }
                     portids[curPortNumber] = curPortSId;
                     porttype[curPortNumber] = 2;
+                    portsize[curPortNumber] = calcNum;
+
+                    Serial.println("All IDs got: " + String(portids[curPortNumber]));
                 }
 
                 // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
@@ -1563,7 +1578,16 @@ void communicationUtil()
                 }
                 else if (porttype[curPortNumber] == 2)
                 {
-                    // ToDo: Add Switch handling
+                    setComLED("rx");
+                    for (int i = 1; i <= portsize[curPortNumber]; i++)
+                    {
+                        char readId = curPort.read();
+                        char readStatus = curPort.read();
+
+                        btnStatus[readId - 'A'] = readStatus;
+
+                        Serial.println("Got ID: " + String(readId) + " Got Status: " + String(readStatus));
+                    }
                 }
             }
 
@@ -1579,7 +1603,18 @@ void communicationUtil()
             }
             else
             {
-                btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = 'n';
+                if (porttype[curPortNumber] == 1)
+                {
+                    btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = 'n';
+                }
+                else if (porttype[curPortNumber] == 2)
+                {
+                    for (int i = 0; i < portsize[curPortNumber]; i++)
+                    {
+                        Serial.println("Cur port to change: " + portids[curPortNumber]);
+                        btnStatus[portids[curPortNumber].charAt(i) - 'A'] = 'n';
+                    }
+                }
             }
             waitingForAnswer = false;
         }
@@ -1626,6 +1661,10 @@ void communicationUtil()
             else if (discoveryActive == true)
             {
                 controllerStatus = 'a';
+                if (curPage == -100)
+                {
+                    renderHome();
+                }
             }
             discoveryActive = false;
             curPortNumber = -1;
@@ -1639,6 +1678,7 @@ void communicationUtil()
         {
             setComLED("tx");
             curPort.print('?');
+            delay(10);
             curPort.print('_');
         }
         else
@@ -1820,7 +1860,7 @@ void statusCheck()
 
 void loop()
 {
-    if (discoveryActive == true || millis() - communication_util_millis >= 100)
+    if (discoveryActive == true || (millis() - communication_util_millis >= 50 && (porttype[0] != 0 || porttype[1] != 0 || porttype[2] != 0 || porttype[3] != 0)))
     {
         communication_util_millis = millis();
         communicationUtil();

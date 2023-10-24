@@ -1,5 +1,9 @@
 #include <SoftwareSerial.h>
 
+// Current status answer
+
+String curStatusAnswer = "";
+
 // Activity LEDs
 
 int activity_led_up = 47;
@@ -27,11 +31,11 @@ bool activity_led_five_state = false;
 
 // SoftwareSerial Ports
 
-SoftwareSerial serialPortOne(A8, 51);
-SoftwareSerial serialPortTwo(A9, 50);
-SoftwareSerial serialPortThree(A10, 53);
-SoftwareSerial serialPortFour(A11, 52);
-SoftwareSerial serialPortFive(A12, 10);
+SoftwareSerial serialPortOne(51, A8);
+SoftwareSerial serialPortTwo(50, A9);
+SoftwareSerial serialPortThree(53, A10);
+SoftwareSerial serialPortFour(52, A11);
+SoftwareSerial serialPortFive(10, A12);
 
 // Currently active serial port
 
@@ -78,8 +82,10 @@ char btnStatus[5] = {};
 // Misc values
 bool discoveryActive = false;
 unsigned long communication_util_millis = 0;
+int resetPin = 12;
 
 void setup() {
+    digitalWrite(resetPin, HIGH);
 
     // Begin Serial
     Serial.begin(9600);
@@ -94,77 +100,92 @@ void setup() {
     pinMode(activity_led_four, OUTPUT);
     pinMode(activity_led_five, OUTPUT);
     pinMode(activity_led_up, OUTPUT);
+    pinMode(resetPin, OUTPUT);
+
+    digitalWrite(activity_led_one, HIGH);
+    digitalWrite(activity_led_two, HIGH);
+    digitalWrite(activity_led_three, HIGH);
+    digitalWrite(activity_led_four, HIGH);
+    digitalWrite(activity_led_five, HIGH);
+    digitalWrite(activity_led_up, HIGH);
 
     delay(200);
+    digitalWrite(activity_led_one, LOW);
+    digitalWrite(activity_led_two, LOW);
+    digitalWrite(activity_led_three, LOW);
+    digitalWrite(activity_led_four, LOW);
+    digitalWrite(activity_led_five, LOW);
+    digitalWrite(activity_led_up, LOW);
     discoveryActive = true;
 }
 
 void toggleActivityLED(int LEDNumber) {
+    Serial.println("Change led: " + String(LEDNumber));
     switch (LEDNumber) {
         case 0:
-            if (activity_led_two == false) {
-                activity_led_two_state = true;
-                activity_led_two_millis = millis();
-                digitalWrite(activity_led_two, HIGH);
+            //if (activity_led_one == false) {
+                activity_led_one_state = true;
+                activity_led_one_millis = millis();
+                digitalWrite(activity_led_one, HIGH);
                 return;
-            } else {
-                activity_led_two_state = false;
-                activity_led_two_millis = millis();
-                digitalWrite(activity_led_two, LOW);
+            /*} else {
+                activity_led_one_state = false;
+                activity_led_one_millis = millis();
+                digitalWrite(activity_led_one, LOW);
                 return;
-            }
+            }*/
             break;
         case 1:
-            if (activity_led_two == false) {
+            //if (activity_led_two == false) {
                 activity_led_two_state = true;
                 activity_led_two_millis = millis();
                 digitalWrite(activity_led_two, HIGH);
                 return;
-            } else {
+            /*} else {
                 activity_led_two_state = false;
                 activity_led_two_millis = millis();
                 digitalWrite(activity_led_two, LOW);
                 return;
-            }
+            }*/
             break;
         case 2:
-            if (activity_led_three == false) {
+            //if (activity_led_three == false) {
                 activity_led_three_state = true;
                 activity_led_three_millis = millis();
                 digitalWrite(activity_led_three, HIGH);
                 return;
-            } else {
+            /*} else {
                 activity_led_three_state = false;
                 activity_led_three_millis = millis();
                 digitalWrite(activity_led_three, LOW);
                 return;
-            }
+            }*/
             break;
         case 3:
-            if (activity_led_four == false) {
+            //if (activity_led_four == false) {
                 activity_led_four_state = true;
                 activity_led_four_millis = millis();
                 digitalWrite(activity_led_four, HIGH);
                 return;
-            } else {
+            /*} else {
                 activity_led_four_state = false;
                 activity_led_four_millis = millis();
                 digitalWrite(activity_led_four, LOW);
                 return;
-            }
+            }*/
             break;
         case 4:
-            if (activity_led_five == false) {
+            //if (activity_led_five == false) {
                 activity_led_five_state = true;
                 activity_led_five_millis = millis();
                 digitalWrite(activity_led_five, HIGH);
                 return;
-            } else {
+            /*} else {
                 activity_led_five_state = false;
                 activity_led_five_millis = millis();
                 digitalWrite(activity_led_five, LOW);
                 return;
-            }
+            }*/
             break;
     }
 }
@@ -179,12 +200,9 @@ void communicationUtil()
 
             if (discoveryActive == true)
             {
-
-                char curPortType = curPort.read();
                 toggleActivityLED(curPortNumber);
-                char curPortCount;
+                char curPortType = curPort.read();
                 char curPortBId;
-                String curPortSId;
 
                 delay(10);
 
@@ -291,16 +309,22 @@ void communicationUtil()
             if (discoveryActive == true) {
                 String allIds = "";
                 for (int i = 0; i <= 4; i++) {
-                    allIds = allIds + portids[i];
+                    if (porttype[i] == 1) {
+                        allIds = allIds + portids[i];
+                    }
                 }
                 Serial.println("All IDs captured: " + allIds);
+                digitalWrite(activity_led_up, HIGH);
             } else {
                 String allStatus = "";
                 for (int i = 0; i <= 4; i++) {
-                    allStatus = allStatus + portids[i];
-                    allStatus = allStatus + btnStatus[portids[i].c_str()[0] - 'A'];
+                    if (porttype[i] == 1) {
+                        allStatus = allStatus + portids[i];
+                        allStatus = allStatus + btnStatus[portids[i].c_str()[0] - 'A'];
+                    }
                 }
                 Serial.println("All Status captured: " + allStatus);
+                curStatusAnswer = allStatus;
             }
             discoveryActive = false;
             curPortNumber = -1;
@@ -312,14 +336,12 @@ void communicationUtil()
         curPort.begin(9600);
         if (discoveryActive == true)
         {
-            toggleActivityLED(curPortNumber);
             curPort.print('?');
             curPort.print('_');
         }
         else
         {
             char idtosend = portids[curPortNumber].c_str()[0];
-            toggleActivityLED(curPortNumber);
             curPort.print(idtosend);
             curPort.print('a');
         }
@@ -354,14 +376,66 @@ void checkAllActivityLED() {
 }
 
 void checkMasterPort() {
-    // ToDo: Check Master port for actions to do
+    if (Serial1.available()) {
+        delay(100);
+        char readid = Serial1.read();
+        char readinst = Serial1.read();
+
+        String testString = String(readid);
+        testString.toLowerCase();
+
+        Serial.println("Got id: " + String(readid) + " Got inst: " + String(readinst));
+
+        if (testString == String(readid) && readid != '?' && readid != '!') {
+            Serial.println("FAIL");
+            return;
+        }
+
+        if (readid == 'S') {
+            if (readinst == 'a') {
+                Serial1.print(curStatusAnswer);
+            }
+        }
+
+        if (readid == '?' && readinst == '_' && discoveryActive == false) {
+            Serial.println("CHECK");
+            int numberOfIds = 0;
+            String allIds = "";
+            for (int i = 0; i <= 5; i++) {
+                if (porttype[i] == 1) {
+                    numberOfIds += 1;
+                    allIds = allIds + String(portids[i]);
+                }
+            }
+            Serial.println(String(numberOfIds));
+            Serial.println(allIds);
+            Serial1.print('S');
+            Serial1.print(String(numberOfIds));
+            Serial1.print(allIds);
+        }
+
+        if (readid == '!' && readinst == '_') {
+            /*curPort.end();
+            curPortNumber = -1;
+            discoveryActive = true;
+            waitingForAnswer = false;
+            for (int i = 0; i <= 5; i++) {
+                portids[i] = "";
+                porttype[i] = 0;
+            }
+            curStatusAnswer = "";
+            delay(100);*/
+            digitalWrite(resetPin, LOW);
+        }
+    }
 }
 
 
 void loop() {
     checkMasterPort();
+    checkAllActivityLED();
 
-    if (discoveryActive == true || millis() - communication_util_millis >= 100) {
+    if (discoveryActive == true || millis() - communication_util_millis >= 50) {
         communication_util_millis = millis();
         communicationUtil();
     }
