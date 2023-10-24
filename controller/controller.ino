@@ -301,7 +301,9 @@ void setup()
     tft.setRotation(3);
     tft.fillScreen(LCD_BLACK);
     display_startup();
-    delay(500);
+    delay(3000);
+    // Standard set Area 5 to bypass
+    btnBypass[5] = true;
     /*btnStatus[arealinking[0] - 'A'] = 'a';
     btnStatus[arealinking[1] - 'A'] = 'b';
     btnStatus[arealinking[2] - 'A'] = 'c';
@@ -411,6 +413,7 @@ void setStatusLEDColor()
 void startShow()
 {
     controllerStatus = 'a';
+    timeSinceReset = millis();
     for (int i = 2; i <= 5; i++)
     {
         if (btnStatus[arealinking[i] - 'A'] == 'b')
@@ -706,7 +709,7 @@ void handleSelection(char act, int dir = 0)
                 controllerStatus = 'd';
                 display_startup();
                 curPage = -100;
-                delay(2000);
+                delay(3000);
 
                 return;
             case 4:
@@ -1100,7 +1103,9 @@ void renderDebugPage()
     tft.setCursor(60, 30);
     tft.setTextSize(1);
     tft.print("Zum Verlassen: Left + Right + Enter");
-    tft.setCursor(104, 40);
+    tft.setCursor(69, 40);
+    tft.print("Activate party mode: Home + Page");
+    tft.setCursor(104, 50);
     tft.print("Lamptest: Comdisable");
 
     tft.setCursor(10, 70);
@@ -1141,6 +1146,35 @@ void renderDebugPage()
     return;
 }
 
+void activatePartyMode() {
+    for (int i = 0; i <= 3; i++) {
+        curPort.end();
+        waitingForAnswer = false;
+        if (i == 0)
+        {
+            curPort = serialPortOne;
+        }
+        else if (i == 1)
+        {
+            curPort = serialPortTwo;
+        }
+        else if (i == 2)
+        {
+            curPort = serialPortThree;
+        }
+        else if (i == 3)
+        {
+            curPort = serialPortFour;
+        }
+
+        setComLED("tx");
+        curPort.begin(9600);
+        curPort.print('Y');
+        curPort.print('p');
+    }
+    return;
+}
+
 void handlePageBtn()
 {
     if (curPage == -4)
@@ -1168,6 +1202,9 @@ void handleHomeBtn()
 {
     if (curPage == -4)
     {
+        if (digitalRead(page_btn) == HIGH) {
+            activatePartyMode();
+        }
         if (home_btn_debug == true)
         {
             return;
