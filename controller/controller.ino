@@ -301,7 +301,9 @@ void setup()
     tft.setRotation(3);
     tft.fillScreen(LCD_BLACK);
     display_startup();
+    lampTest(true);
     delay(3000);
+    lampTest(false);
     // Standard set Area 5 to bypass
     btnBypass[5] = true;
     /*btnStatus[arealinking[0] - 'A'] = 'a';
