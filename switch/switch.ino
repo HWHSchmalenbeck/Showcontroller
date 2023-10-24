@@ -39,7 +39,7 @@ SoftwareSerial serialPortFive(10, A12);
 
 // Currently active serial port
 
-SoftwareSerial curPort(22,24);
+SoftwareSerial curPort(22, 24);
 int curPortNumber = -1;
 
 bool waitingForAnswer = false;
@@ -84,14 +84,14 @@ bool discoveryActive = false;
 unsigned long communication_util_millis = 0;
 int resetPin = 12;
 
-void setup() {
+void setup()
+{
     digitalWrite(resetPin, HIGH);
 
     // Begin Serial
     Serial.begin(9600);
-    
-    Serial1.begin(9600);
 
+    Serial1.begin(9600);
 
     // PinModes
     pinMode(activity_led_one, OUTPUT);
@@ -119,74 +119,76 @@ void setup() {
     discoveryActive = true;
 }
 
-void toggleActivityLED(int LEDNumber) {
+void toggleActivityLED(int LEDNumber)
+{
     Serial.println("Change led: " + String(LEDNumber));
-    switch (LEDNumber) {
-        case 0:
-            //if (activity_led_one == false) {
-                activity_led_one_state = true;
-                activity_led_one_millis = millis();
-                digitalWrite(activity_led_one, HIGH);
-                return;
-            /*} else {
-                activity_led_one_state = false;
-                activity_led_one_millis = millis();
-                digitalWrite(activity_led_one, LOW);
-                return;
-            }*/
-            break;
-        case 1:
-            //if (activity_led_two == false) {
-                activity_led_two_state = true;
-                activity_led_two_millis = millis();
-                digitalWrite(activity_led_two, HIGH);
-                return;
-            /*} else {
-                activity_led_two_state = false;
-                activity_led_two_millis = millis();
-                digitalWrite(activity_led_two, LOW);
-                return;
-            }*/
-            break;
-        case 2:
-            //if (activity_led_three == false) {
-                activity_led_three_state = true;
-                activity_led_three_millis = millis();
-                digitalWrite(activity_led_three, HIGH);
-                return;
-            /*} else {
-                activity_led_three_state = false;
-                activity_led_three_millis = millis();
-                digitalWrite(activity_led_three, LOW);
-                return;
-            }*/
-            break;
-        case 3:
-            //if (activity_led_four == false) {
-                activity_led_four_state = true;
-                activity_led_four_millis = millis();
-                digitalWrite(activity_led_four, HIGH);
-                return;
-            /*} else {
-                activity_led_four_state = false;
-                activity_led_four_millis = millis();
-                digitalWrite(activity_led_four, LOW);
-                return;
-            }*/
-            break;
-        case 4:
-            //if (activity_led_five == false) {
-                activity_led_five_state = true;
-                activity_led_five_millis = millis();
-                digitalWrite(activity_led_five, HIGH);
-                return;
-            /*} else {
-                activity_led_five_state = false;
-                activity_led_five_millis = millis();
-                digitalWrite(activity_led_five, LOW);
-                return;
-            }*/
-            break;
+    switch (LEDNumber)
+    {
+    case 0:
+        // if (activity_led_one == false) {
+        activity_led_one_state = true;
+        activity_led_one_millis = millis();
+        digitalWrite(activity_led_one, HIGH);
+        return;
+        /*} else {
+            activity_led_one_state = false;
+            activity_led_one_millis = millis();
+            digitalWrite(activity_led_one, LOW);
+            return;
+        }*/
+        break;
+    case 1:
+        // if (activity_led_two == false) {
+        activity_led_two_state = true;
+        activity_led_two_millis = millis();
+        digitalWrite(activity_led_two, HIGH);
+        return;
+        /*} else {
+            activity_led_two_state = false;
+            activity_led_two_millis = millis();
+            digitalWrite(activity_led_two, LOW);
+            return;
+        }*/
+        break;
+    case 2:
+        // if (activity_led_three == false) {
+        activity_led_three_state = true;
+        activity_led_three_millis = millis();
+        digitalWrite(activity_led_three, HIGH);
+        return;
+        /*} else {
+            activity_led_three_state = false;
+            activity_led_three_millis = millis();
+            digitalWrite(activity_led_three, LOW);
+            return;
+        }*/
+        break;
+    case 3:
+        // if (activity_led_four == false) {
+        activity_led_four_state = true;
+        activity_led_four_millis = millis();
+        digitalWrite(activity_led_four, HIGH);
+        return;
+        /*} else {
+            activity_led_four_state = false;
+            activity_led_four_millis = millis();
+            digitalWrite(activity_led_four, LOW);
+            return;
+        }*/
+        break;
+    case 4:
+        // if (activity_led_five == false) {
+        activity_led_five_state = true;
+        activity_led_five_millis = millis();
+        digitalWrite(activity_led_five, HIGH);
+        return;
+        /*} else {
+            activity_led_five_state = false;
+            activity_led_five_millis = millis();
+            digitalWrite(activity_led_five, LOW);
+            return;
+        }*/
+        break;
     }
 }
 
@@ -296,29 +298,32 @@ void communicationUtil()
         {
             curPort = serialPortFour;
         }
-        else if (curPortNumber == 3)
-        {
-            curPort = serialPortFour;
-        }
         else if (curPortNumber == 4)
         {
             curPort = serialPortFive;
         }
         else if (curPortNumber >= 5)
         {
-            if (discoveryActive == true) {
+            if (discoveryActive == true)
+            {
                 String allIds = "";
-                for (int i = 0; i <= 4; i++) {
-                    if (porttype[i] == 1) {
+                for (int i = 0; i <= 4; i++)
+                {
+                    if (porttype[i] == 1)
+                    {
                         allIds = allIds + portids[i];
                     }
                 }
                 Serial.println("All IDs captured: " + allIds);
                 digitalWrite(activity_led_up, HIGH);
-            } else {
+            }
+            else
+            {
                 String allStatus = "";
-                for (int i = 0; i <= 4; i++) {
-                    if (porttype[i] == 1) {
+                for (int i = 0; i <= 4; i++)
+                {
+                    if (porttype[i] == 1)
+                    {
                         allStatus = allStatus + portids[i];
                         allStatus = allStatus + btnStatus[portids[i].c_str()[0] - 'A'];
                     }
@@ -351,32 +356,40 @@ void communicationUtil()
     }
 }
 
-void checkAllActivityLED() {
-    if (activity_led_one_state == true && millis() - activity_led_one_millis >= 5000) {
+void checkAllActivityLED()
+{
+    if (activity_led_one_state == true && millis() - activity_led_one_millis >= 5000)
+    {
         activity_led_one_state = false;
         digitalWrite(activity_led_one, LOW);
     }
-    if (activity_led_two_state == true && millis() - activity_led_two_millis >= 5000) {
+    if (activity_led_two_state == true && millis() - activity_led_two_millis >= 5000)
+    {
         activity_led_two_state = false;
         digitalWrite(activity_led_two, LOW);
     }
-    if (activity_led_three_state == true && millis() - activity_led_three_millis >= 5000) {
+    if (activity_led_three_state == true && millis() - activity_led_three_millis >= 5000)
+    {
         activity_led_three_state = false;
         digitalWrite(activity_led_three, LOW);
     }
-    if (activity_led_four_state == true && millis() - activity_led_four_millis >= 5000) {
+    if (activity_led_four_state == true && millis() - activity_led_four_millis >= 5000)
+    {
         activity_led_four_state = false;
         digitalWrite(activity_led_four, LOW);
     }
-    if (activity_led_five_state == true && millis() - activity_led_five_millis >= 5000) {
+    if (activity_led_five_state == true && millis() - activity_led_five_millis >= 5000)
+    {
         activity_led_five_state = false;
         digitalWrite(activity_led_five, LOW);
     }
     return;
 }
 
-void checkMasterPort() {
-    if (Serial1.available()) {
+void checkMasterPort()
+{
+    if (Serial1.available())
+    {
         delay(100);
         char readid = Serial1.read();
         char readinst = Serial1.read();
@@ -386,23 +399,29 @@ void checkMasterPort() {
 
         Serial.println("Got id: " + String(readid) + " Got inst: " + String(readinst));
 
-        if (testString == String(readid) && readid != '?' && readid != '!') {
+        if (testString == String(readid) && readid != '?' && readid != '!')
+        {
             Serial.println("FAIL");
             return;
         }
 
-        if (readid == 'S') {
-            if (readinst == 'a') {
+        if (readid == 'S')
+        {
+            if (readinst == 'a')
+            {
                 Serial1.print(curStatusAnswer);
             }
         }
 
-        if (readid == '?' && readinst == '_' && discoveryActive == false) {
+        if (readid == '?' && readinst == '_' && discoveryActive == false)
+        {
             Serial.println("CHECK");
             int numberOfIds = 0;
             String allIds = "";
-            for (int i = 0; i <= 5; i++) {
-                if (porttype[i] == 1) {
+            for (int i = 0; i <= 5; i++)
+            {
+                if (porttype[i] == 1)
+                {
                     numberOfIds += 1;
                     allIds = allIds + String(portids[i]);
                 }
@@ -414,7 +433,8 @@ void checkMasterPort() {
             Serial1.print(allIds);
         }
 
-        if (readid == '!' && readinst == '_') {
+        if (readid == '!' && readinst == '_')
+        {
             /*curPort.end();
             curPortNumber = -1;
             discoveryActive = true;
@@ -427,15 +447,86 @@ void checkMasterPort() {
             delay(100);*/
             digitalWrite(resetPin, LOW);
         }
+
+        if (readid != '!' && readid != '?' && readid != 'S' && (readinst == 'b' || readinst == 'c' || readinst == 's' || readinst == 'r' || readinst == 'p'))
+        {
+            for (int i = 0; i <= 4; i++)
+            {
+                if (readid == 'Y')
+                {
+                    waitingForAnswer = false;
+                    curPort.end();
+                    if (i == 0)
+                    {
+                        curPort = serialPortOne;
+                    }
+                    else if (i == 1)
+                    {
+                        curPort = serialPortTwo;
+                    }
+                    else if (i == 2)
+                    {
+                        curPort = serialPortThree;
+                    }
+                    else if (i == 3)
+                    {
+                        curPort = serialPortFour;
+                    }
+                    else if (i == 4)
+                    {
+                        curPort = serialPortFive;
+                    }
+
+                    curPort.begin(9600);
+                    curPort.print(readid);
+                    curPort.print(readinst);
+                }
+                else
+                {
+                    bool done = false;
+                    if (portids[i].charAt(0) == readid)
+                    {
+                        waitingForAnswer = false;
+                        curPort.end();
+                        if (i == 0)
+                        {
+                            curPort = serialPortOne;
+                        }
+                        else if (i == 1)
+                        {
+                            curPort = serialPortTwo;
+                        }
+                        else if (i == 2)
+                        {
+                            curPort = serialPortThree;
+                        }
+                        else if (i == 3)
+                        {
+                            curPort = serialPortFour;
+                        }
+                        else if (i == 4)
+                        {
+                            curPort = serialPortFive;
+                        }
+
+                        curPort.begin(9600);
+                        curPort.print(readid);
+                        curPort.print(readinst);
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
-
-void loop() {
+void loop()
+{
     checkMasterPort();
     checkAllActivityLED();
 
-    if (discoveryActive == true || millis() - communication_util_millis >= 50) {
+    if (discoveryActive == true || millis() - communication_util_millis >= 50)
+    {
         communication_util_millis = millis();
         communicationUtil();
     }

@@ -248,6 +248,12 @@ bool rxLEDState = false;
 bool txLEDState = false;
 bool crisisLEDState = true;
 unsigned long lastComLEDchange = 0;
+unsigned long lastCrisisDisable = 0;
+unsigned long lastBtnSentAction = 0;
+unsigned long timeSinceReset = 0;
+int minCrisisDisable = 2000;
+int minLastBtnSentAction = 2000;
+int minTimeSinceReset = 4000;
 
 void setup()
 {
@@ -597,6 +603,9 @@ void resetStatus()
     {
         btnStatus[allIds.charAt(i) - 'A'] = 'a';
     }
+    lastCrisisDisable = millis();
+    lastBtnSentAction = millis();
+    timeSinceReset = millis();
     return;
 }
 
@@ -1704,6 +1713,9 @@ void communicationUtil()
 
 void statusCheck()
 {
+    if (millis() - timeSinceReset <= minTimeSinceReset) {
+        return;
+    }
     String allIds = "";
     bool hasFailure = false;
     bool hasCrisis = false;
@@ -1718,7 +1730,7 @@ void statusCheck()
     for (int i = 0; i <= (allIds.length() - 1); i++)
     {
         char gotStatus = btnStatus[allIds.charAt(i) - 'A'];
-        if (gotStatus == 'c')
+        if (gotStatus == 'c' && millis() - lastCrisisDisable >= minCrisisDisable)
         {
             hasCrisis = true;
             break;
@@ -1802,8 +1814,9 @@ void statusCheck()
         {
             startShow();
         }
-        else if (areaTwoBtns >= 1 && areaTwoBtns <= 3)
+        else if (areaTwoBtns >= 1 && areaTwoBtns <= 3 && millis() - lastBtnSentAction >= minLastBtnSentAction)
         {
+            lastBtnSentAction = millis();
             controllerStatus = 'b';
             for (int i = 2; i <= 5; i++)
             {
