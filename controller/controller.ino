@@ -1159,9 +1159,11 @@ void renderCreditsPage()
     tft.drawBitmap(5, 5, heartout, 53, 53, LCD_BLACK);
 
     tft.setCursor(75, 14);
-    tft.setTextColor(LCD_BLACK);
+    tft.setTextColor(LCD_ORANGE);
     tft.setTextSize(2);
-    tft.print("HWHS Showcontroller");
+    tft.print("HW");
+    tft.setTextColor(LCD_BLACK);
+    tft.print("HS Showcontroller");
     tft.setCursor(145, 34);
     tft.print("Credits");
 
@@ -1169,18 +1171,26 @@ void renderCreditsPage()
     tft.print("Coding:");
 
     tft.setCursor(170, 70);
-    tft.print("Lois");
+    tft.setTextColor(LCD_BLUE);
+    tft.print("Lo");
+    tft.setTextColor(LCD_PINK);
+    tft.print("is");
 
     tft.setCursor(10, 110);
+    tft.setTextColor(LCD_BLACK);
     tft.print("Konstruktion:");
 
     tft.setCursor(170, 110);
     tft.print("Valentin");
 
     tft.setCursor(170, 130);
-    tft.print("Lois");
+    tft.setTextColor(LCD_BLUE);
+    tft.print("Lo");
+    tft.setTextColor(LCD_PINK);
+    tft.print("is");
 
     tft.setCursor(170, 150);
+    tft.setTextColor(LCD_BLACK);
     tft.print("Timo");
 
     tft.setCursor(170, 170);
@@ -1211,16 +1221,43 @@ void renderDebugPage()
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(105, 5);
     tft.setTextSize(2);
-    tft.setTextColor(LCD_BLACK);
-    tft.print("Debug Page");
+    tft.setTextColor(LCD_BLUE);
+    tft.print("Debug ");
+    tft.setTextColor(LCD_PINK);
+    tft.print("Page");
 
     tft.setCursor(60, 25);
     tft.setTextSize(1);
-    tft.print("Zum Verlassen: Left + Enter + Right");
+    tft.setTextColor(LCD_BLACK);
+    tft.print("Zum ");
+    tft.setTextColor(LCD_RED);
+    tft.print("Verlassen");
+    tft.setTextColor(LCD_BLACK);
+    tft.print(": Left + Enter + Right");
     tft.setCursor(69, 35);
-    tft.print("Activate party mode: Page + Home");
+    tft.print("Activate ");
+    tft.setTextColor(LCD_RED);
+    tft.print("p");
+    tft.setTextColor(LCD_YELLOW);
+    tft.print("a");
+    tft.setTextColor(LCD_GREEN);
+    tft.print("r");
+    tft.setTextColor(LCD_BLUE);
+    tft.print("t");
+    tft.setTextColor(LCD_PINK);
+    tft.print("y");
+    tft.setTextColor(LCD_BLACK);
+    tft.print(" mode: Page + Home");
     tft.setCursor(4, 45);
-    tft.print("WitchEmpty false: Panik + Start / true: Left + Start");
+    tft.print("WitchEmpty ");
+    tft.setTextColor(LCD_RED);
+    tft.print("false");
+    tft.setTextColor(LCD_BLACK);
+    tft.print(": Panik + Start / ");
+    tft.setTextColor(LCD_GREEN);
+    tft.print("true");
+    tft.setTextColor(LCD_BLACK);
+    tft.print(": Left + Start");
     tft.setCursor(104, 55);
     tft.print("Lamptest: Comdisable");
 
