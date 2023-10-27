@@ -225,6 +225,13 @@ unsigned long crisis_led_blink_millis = 0;
 unsigned long witch_status_sent_millis = 0;
 unsigned long witch_wait_millis = 0;
 
+bool sent_area_one_blink = false;
+bool area_one_reconnect = false;
+bool sent_area_two_blink = false;
+bool area_two_reconnect = false;
+bool sent_btn_pressed_blink = false;
+bool btn_pressed_reconnect = false;
+
 // Debug states
 
 bool page_btn_debug = false;
@@ -256,7 +263,7 @@ String oldStatusText = "";
 
 // Values for show
 
-bool witchEmpty = true;
+bool witchEmpty = false;
 
 // Misc values
 bool discoveryActive = false;
@@ -434,6 +441,8 @@ void startShow()
     timeSinceReset = millis();
     showRunningMillis = millis();
     witchEmpty = true;
+    sent_area_one_blink = false;
+    sent_btn_pressed_blink = false;
     int i = 2;
     if (controllerStatus == 'c')
     {
@@ -594,6 +603,9 @@ void resetStatus()
     controllerStatus = 'a';
     crisisLEDState = true;
     digitalWrite(crisis_red, HIGH);
+    sent_area_one_blink = false;
+    sent_area_two_blink = false;
+    sent_btn_pressed_blink = false;
 
     for (int i = 0; i <= 3; i++)
     {
@@ -736,7 +748,7 @@ void displayStatus()
     {
         oldStatusText = statusText;
         // Clear current Status
-        tft.fillRect(15, 210, 215, 15, LCD_WHITE);
+        tft.fillRect(15, 210, 215, 25, LCD_WHITE);
 
         // Print new Status
         tft.setCursor(15, 210);
@@ -1143,8 +1155,8 @@ void renderCreditsPage()
 {
     handleSelection('c');
     tft.fillScreen(LCD_WHITE);
-    tft.drawBitmap(5,5,heart,53,53,LCD_RED);
-    tft.drawBitmap(5,5,heartout,53,53,LCD_BLACK);
+    tft.drawBitmap(5, 5, heart, 53, 53, LCD_RED);
+    tft.drawBitmap(5, 5, heartout, 53, 53, LCD_BLACK);
 
     tft.setCursor(75, 14);
     tft.setTextColor(LCD_BLACK);
@@ -1204,11 +1216,11 @@ void renderDebugPage()
 
     tft.setCursor(60, 25);
     tft.setTextSize(1);
-    tft.print("Zum Verlassen: Left + Right + Enter");
+    tft.print("Zum Verlassen: Left + Enter + Right");
     tft.setCursor(69, 35);
-    tft.print("Activate party mode: Home + Page");
-    tft.setCursor(47, 45);
-    tft.print("Set WitchEmpty to false: Panik + Start");
+    tft.print("Activate party mode: Page + Home");
+    tft.setCursor(4, 45);
+    tft.print("WitchEmpty false: Panik + Start / true: Left + Start");
     tft.setCursor(104, 55);
     tft.print("Lamptest: Comdisable");
 
@@ -1455,6 +1467,11 @@ void handleStartBtn()
                     }
                 }
             }
+        }
+        if (digitalRead(nav_left_btn) == HIGH) {
+            witchEmpty = true;
+            sent_area_one_blink = false;
+            sent_area_two_blink = false;
         }
         if (start_btn_debug == true)
         {
@@ -1877,7 +1894,6 @@ void communicationUtil()
         {
             setComLED("tx");
             curPort.print('?');
-            delay(10);
             curPort.print('_');
         }
         else
@@ -1889,7 +1905,7 @@ void communicationUtil()
             }
             else if (porttype[curPortNumber] == 1)
             {
-                idtosend = portids[curPortNumber].c_str()[0];
+                idtosend = portids[curPortNumber].charAt(0);
             }
             else if (porttype[curPortNumber] == 3)
             {
@@ -1934,6 +1950,37 @@ void statusCheck()
         }
     }
 
+    if (btnStatus[arealinking[0] - 'A'] == 'n')
+    {
+        area_one_reconnect = true;
+    }
+    else if (btnStatus[arealinking[0] - 'A'] != 'n' && area_one_reconnect == true)
+    {
+        sent_area_one_blink = false;
+    }
+    if (btnStatus[arealinking[1] - 'A'] == 'n')
+    {
+        area_two_reconnect = true;
+    }
+    else if (btnStatus[arealinking[1] - 'A'] != 'n' && area_two_reconnect == true)
+    {
+        sent_area_two_blink = false;
+    }
+
+    if ((btnStatus[arealinking[2] - 'A'] == 'n' && btnBypass[2] == false) ||
+        (btnStatus[arealinking[3] - 'A'] == 'n' && btnBypass[3] == false) ||
+        (btnStatus[arealinking[4] - 'A'] == 'n' && btnBypass[4] == false))
+    {
+        btn_pressed_reconnect = true;
+    }
+    else if ((btnStatus[arealinking[2] - 'A'] != 'n' || btnBypass[2] == true) &&
+             (btnStatus[arealinking[3] - 'A'] != 'n' || btnBypass[2] == true) &&
+             (btnStatus[arealinking[4] - 'A'] != 'n' || btnBypass[2] == true) &&
+             btn_pressed_reconnect == true)
+    {
+        sent_btn_pressed_blink = false;
+    }
+
     if (btnStatus[arealinking[2] - 'A'] == 'b')
     {
         areaTwoBtns += 1;
@@ -1974,8 +2021,9 @@ void statusCheck()
     {
         // Area 1
 
-        if (btnStatus[arealinking[0] - 'A'] == 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b')
+        if (btnStatus[arealinking[0] - 'A'] == 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b' && sent_area_two_blink == false)
         {
+            sent_area_two_blink = true;
             witch_status_sent_millis = millis();
             for (int i = 0; i <= 3; i++)
             {
@@ -2008,9 +2056,11 @@ void statusCheck()
                 }
             }
         }
-        else if (btnStatus[arealinking[0] - 'A'] != 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b')
+        else if (btnStatus[arealinking[0] - 'A'] != 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b' && sent_area_one_blink == false)
         {
             witch_status_sent_millis = millis();
+            sent_area_one_blink = true;
+            sent_area_two_blink = false;
             for (int i = 0; i <= 3; i++)
             {
                 if (portids[i].indexOf(arealinking[0]) != -1)
@@ -2054,6 +2104,8 @@ void statusCheck()
             {
                 witch_wait_millis = 0;
                 witchEmpty = false;
+                sent_area_one_blink = false;
+                sent_area_two_blink = false;
                 for (int i = 0; i <= 1; i++)
                 {
                     btnStatus[arealinking[i] - 'A'] = 'a';
@@ -2097,8 +2149,9 @@ void statusCheck()
         {
             startShow();
         }
-        else if (areaTwoBtns >= 1 && areaTwoBtns <= 3 && millis() - lastBtnSentAction >= minLastBtnSentAction)
+        else if (areaTwoBtns >= 1 && areaTwoBtns <= 3 && millis() - lastBtnSentAction >= minLastBtnSentAction && sent_btn_pressed_blink == false)
         {
+            sent_btn_pressed_blink = true;
             lastBtnSentAction = millis();
             controllerStatus = 'b';
             for (int i = 2; i <= 5; i++)

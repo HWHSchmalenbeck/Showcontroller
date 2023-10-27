@@ -337,6 +337,7 @@ void loop()
                         blinkType = 5;
                         blinkMillis = 0;
                         partyActive = false;
+                        curStatus = 'a';
                         setBtnColor(GREEN);
                     }
                     else
