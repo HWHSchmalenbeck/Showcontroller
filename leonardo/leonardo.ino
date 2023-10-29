@@ -17,12 +17,17 @@ void startShow() {
     return;
 }
 
+void stopRunning() {
+    Keyboard.write(KEY_KP_0);
+    return;
+}
+
 void runPanic() {
     Keyboard.write(KEY_KP_0);
     delay(500);
     Keyboard.write('#');
     delay(500);
-    Keyboard.print("200");
+    Keyboard.print("1000");
     delay(500);
     Keyboard.write(KEY_RETURN);
     delay(500);
@@ -38,6 +43,8 @@ void loop() {
             startShow();
         } else if (readInst == 'p') {
             runPanic();
+        } else if (readInst == 'r') {
+            stopRunning();
         }
     }
 }

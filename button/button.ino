@@ -18,7 +18,7 @@
  *
  */
 
-char btnId = 'F';
+char btnId = 'E';
 int btnPin = 8;
 
 int ledPinR = 3;
@@ -329,13 +329,21 @@ void loop()
             {
                 if (curStatus != 'b')
                 {
-                    // DEBUG
-                    Serial.println("Blinking green due to other buttons pushed.");
+                    if (blinkType != 5)
+                    {
+                        // DEBUG
+                        Serial.println("Blinking green due to other buttons pushed.");
 
-                    blinkType = 5;
-                    blinkMillis = 0;
-                    partyActive = false;
-                    setBtnColor(GREEN);
+                        blinkType = 5;
+                        blinkMillis = 0;
+                        partyActive = false;
+                        curStatus = 'a';
+                        setBtnColor(GREEN);
+                    }
+                    else
+                    {
+                        Serial.println("Disregarding blink green instruction because already blinking green");
+                    }
                 }
                 else
                 {
@@ -348,12 +356,17 @@ void loop()
             {
 
                 // DEBUG
-                Serial.println("Enabling crisis due to Serial");
+                if (blinkType != 1)
+                {
+                    Serial.println("Enabling crisis due to Serial");
 
-                blinkType = 1;
-                blinkMillis = 0;
-                partyActive = false;
-                setBtnColor(PINK);
+                    blinkType = 1;
+                    blinkMillis = 0;
+                    partyActive = false;
+                    setBtnColor(PINK);
+                } else {
+                    Serial.println("Disregarding blink pink instructions because already blinking pink");
+                }
 
                 // RESET
             }
@@ -485,6 +498,7 @@ void loop()
 
             curStatus = 'a';
             blinkType = 0;
+            partyActive = false;
             setBtnColor(RED);
         }
         else if (dur >= durCrisisPress && curBtnStatus == 2)
@@ -506,6 +520,7 @@ void loop()
             curStatus = 'b';
             blinkType = 0;
             partyActive = false;
+            setBtnColor(GREEN);
         }
 
         curBtnStatus = 0;
