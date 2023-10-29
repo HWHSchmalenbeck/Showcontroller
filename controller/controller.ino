@@ -1181,6 +1181,7 @@ void renderCreditsPage()
     tft.print("Konstruktion:");
 
     tft.setCursor(170, 110);
+    tft.setTextColor(LCD_GREEN);
     tft.print("Valentin");
 
     tft.setCursor(170, 130);
@@ -1778,6 +1779,7 @@ void communicationUtil()
                 }
                 else if (curPortType == 'S')
                 {
+                    Serial.println("curPort is Switch");
                     curPortCount = curPort.read();
                     int calcNum = curPortCount - '0';
 
@@ -1797,7 +1799,7 @@ void communicationUtil()
                 }
                 else if (curPortType == 'V')
                 {
-                    // Handle Vogelscheuche
+                    Serial.println("curPort is Vogelscheuche");
                 }
 
                 // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));

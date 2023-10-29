@@ -18,7 +18,7 @@
  *
  */
 
-char btnId = 'F';
+char btnId = 'E';
 int btnPin = 8;
 
 int ledPinR = 3;
@@ -498,6 +498,7 @@ void loop()
 
             curStatus = 'a';
             blinkType = 0;
+            partyActive = false;
             setBtnColor(RED);
         }
         else if (dur >= durCrisisPress && curBtnStatus == 2)
@@ -519,6 +520,7 @@ void loop()
             curStatus = 'b';
             blinkType = 0;
             partyActive = false;
+            setBtnColor(GREEN);
         }
 
         curBtnStatus = 0;
