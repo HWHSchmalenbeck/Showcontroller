@@ -231,6 +231,8 @@ bool sent_area_two_blink = false;
 bool area_two_reconnect = false;
 bool sent_btn_pressed_blink = false;
 bool btn_pressed_reconnect = false;
+bool sent_vogelscheuche = false;
+bool sent_stop_playing = false;
 
 // Debug states
 
@@ -443,6 +445,8 @@ void startShow()
     witchEmpty = true;
     sent_area_one_blink = false;
     sent_btn_pressed_blink = false;
+    sent_vogelscheuche = false;
+    sent_stop_playing = false;
     int i = 2;
     if (controllerStatus == 'c')
     {
@@ -656,35 +660,35 @@ void enableCrisis()
     {
         Serial1.print('p');
         showRunningMillis = 0;
+        for (int i = 0; i <= 3; i++)
+        {
+            curPort.end();
+            waitingForAnswer = false;
+            if (i == 0)
+            {
+                curPort = serialPortOne;
+            }
+            else if (i == 1)
+            {
+                curPort = serialPortTwo;
+            }
+            else if (i == 2)
+            {
+                curPort = serialPortThree;
+            }
+            else if (i == 3)
+            {
+                curPort = serialPortFour;
+            }
+
+            setComLED("tx");
+            curPort.begin(9600);
+            curPort.print('Y');
+            curPort.print('c');
+        }
     }
     controllerStatus = 'c';
 
-    for (int i = 0; i <= 3; i++)
-    {
-        curPort.end();
-        waitingForAnswer = false;
-        if (i == 0)
-        {
-            curPort = serialPortOne;
-        }
-        else if (i == 1)
-        {
-            curPort = serialPortTwo;
-        }
-        else if (i == 2)
-        {
-            curPort = serialPortThree;
-        }
-        else if (i == 3)
-        {
-            curPort = serialPortFour;
-        }
-
-        setComLED("tx");
-        curPort.begin(9600);
-        curPort.print('Y');
-        curPort.print('c');
-    }
     return;
 }
 
@@ -1506,7 +1510,8 @@ void handleStartBtn()
                 }
             }
         }
-        if (digitalRead(nav_left_btn) == HIGH) {
+        if (digitalRead(nav_left_btn) == HIGH)
+        {
             witchEmpty = true;
             sent_area_one_blink = false;
             sent_area_two_blink = false;
@@ -1800,6 +1805,8 @@ void communicationUtil()
                 else if (curPortType == 'V')
                 {
                     Serial.println("curPort is Vogelscheuche");
+
+                    porttype[curPortNumber] = 3;
                 }
 
                 // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
@@ -1842,7 +1849,7 @@ void communicationUtil()
                 }
                 else if (porttype[curPortNumber] == 3)
                 {
-                    // ERROR (Can't get answer from Vogelscheuche)
+                    Serial.println("Got answer from Vogelscheuche; ignoring");
                 }
             }
 
@@ -2281,6 +2288,47 @@ void checkTime()
     {
         digitFour = secString.charAt(1);
         displayClock(4, secString.charAt(1));
+    }
+
+    if (minString == "02" && secString == "38" && sent_vogelscheuche == false)
+    {
+        sent_vogelscheuche = true;
+
+        for (int i = 0; i <= 3; i++)
+        {
+            if (porttype[i] == 3)
+            {
+                curPort.end();
+                waitingForAnswer = false;
+                if (i == 0)
+                {
+                    curPort = serialPortOne;
+                }
+                else if (i == 1)
+                {
+                    curPort = serialPortTwo;
+                }
+                else if (i == 2)
+                {
+                    curPort = serialPortThree;
+                }
+                else if (i == 3)
+                {
+                    curPort = serialPortFour;
+                }
+
+                setComLED("tx");
+                curPort.begin(9600);
+                curPort.print('V');
+                curPort.print('$');
+            }
+        }
+    }
+
+    if (minString == "30" && sent_stop_playing == false) {
+        sent_stop_playing = true;
+
+        Serial1.print('r');
     }
 
     Serial.println("Mins: " + minString + " Secs: " + secString);
