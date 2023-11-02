@@ -231,6 +231,8 @@ bool sent_area_two_blink = false;
 bool area_two_reconnect = false;
 bool sent_btn_pressed_blink = false;
 bool btn_pressed_reconnect = false;
+bool sent_vogelscheuche = false;
+bool sent_stop_playing = false;
 
 // Debug states
 
@@ -248,12 +250,15 @@ extern uint8_t logobody[];
 extern uint8_t logoeye[];
 extern uint8_t heart[];
 extern uint8_t heartout[];
+extern uint8_t otto_small[];
+extern uint8_t eye_small[];
 
 // Tft display
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 // Lower bar Home Screen
 unsigned long showRunningMillis = 0;
+char digitZero = '0';
 char digitOne = '0';
 char digitTwo = '0';
 char digitThree = '0';
@@ -443,6 +448,8 @@ void startShow()
     witchEmpty = true;
     sent_area_one_blink = false;
     sent_btn_pressed_blink = false;
+    sent_vogelscheuche = false;
+    sent_stop_playing = false;
     int i = 2;
     if (controllerStatus == 'c')
     {
@@ -656,42 +663,51 @@ void enableCrisis()
     {
         Serial1.print('p');
         showRunningMillis = 0;
+        for (int i = 0; i <= 3; i++)
+        {
+            curPort.end();
+            waitingForAnswer = false;
+            if (i == 0)
+            {
+                curPort = serialPortOne;
+            }
+            else if (i == 1)
+            {
+                curPort = serialPortTwo;
+            }
+            else if (i == 2)
+            {
+                curPort = serialPortThree;
+            }
+            else if (i == 3)
+            {
+                curPort = serialPortFour;
+            }
+
+            setComLED("tx");
+            curPort.begin(9600);
+            curPort.print('Y');
+            curPort.print('c');
+        }
     }
     controllerStatus = 'c';
 
-    for (int i = 0; i <= 3; i++)
-    {
-        curPort.end();
-        waitingForAnswer = false;
-        if (i == 0)
-        {
-            curPort = serialPortOne;
-        }
-        else if (i == 1)
-        {
-            curPort = serialPortTwo;
-        }
-        else if (i == 2)
-        {
-            curPort = serialPortThree;
-        }
-        else if (i == 3)
-        {
-            curPort = serialPortFour;
-        }
-
-        setComLED("tx");
-        curPort.begin(9600);
-        curPort.print('Y');
-        curPort.print('c');
-    }
     return;
 }
 
 void displayClock(int digit, char number)
 {
+    if (curPage != -1) {
+        return;
+    }
+    tft.setTextSize(2);
     switch (digit)
     {
+    case 0:
+        tft.fillRect(228, 210, 10, 15, LCD_WHITE);
+        tft.setCursor(228, 210);
+        tft.print(String(number));
+        break;
     case 1:
         tft.fillRect(240, 210, 10, 15, LCD_WHITE);
         tft.setCursor(240, 210);
@@ -1155,8 +1171,13 @@ void renderCreditsPage()
 {
     handleSelection('c');
     tft.fillScreen(LCD_WHITE);
+    tft.drawBitmap(5, 5, otto_small, 51, 50, LCD_BLACK);
+    tft.drawBitmap(25, 19, eye_small, 3, 2, LCD_BLUE);
+    tft.drawBitmap(34, 19, eye_small, 3, 2, LCD_PINK);
+    /*
     tft.drawBitmap(5, 5, heart, 53, 53, LCD_RED);
     tft.drawBitmap(5, 5, heartout, 53, 53, LCD_BLACK);
+    */
 
     tft.setCursor(75, 14);
     tft.setTextColor(LCD_ORANGE);
@@ -1506,7 +1527,8 @@ void handleStartBtn()
                 }
             }
         }
-        if (digitalRead(nav_left_btn) == HIGH) {
+        if (digitalRead(nav_left_btn) == HIGH)
+        {
             witchEmpty = true;
             sent_area_one_blink = false;
             sent_area_two_blink = false;
@@ -1800,6 +1822,8 @@ void communicationUtil()
                 else if (curPortType == 'V')
                 {
                     Serial.println("curPort is Vogelscheuche");
+
+                    porttype[curPortNumber] = 3;
                 }
 
                 // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
@@ -1842,7 +1866,7 @@ void communicationUtil()
                 }
                 else if (porttype[curPortNumber] == 3)
                 {
-                    // ERROR (Can't get answer from Vogelscheuche)
+                    Serial.println("Got answer from Vogelscheuche; ignoring");
                 }
             }
 
@@ -2262,6 +2286,12 @@ void checkTime()
         secString = "0" + secString;
     }
 
+    if (minString.charAt(2) != NULL && minString.charAt(0) != digitZero) {
+        digitZero = minString.charAt(0);
+        displayClock(0, minString.charAt(0));
+        minString.remove(0,1);
+    }
+
     if (minString.charAt(0) != digitOne)
     {
         digitOne = minString.charAt(0);
@@ -2283,12 +2313,55 @@ void checkTime()
         displayClock(4, secString.charAt(1));
     }
 
+    if (minString == "02" && secString == "38" && sent_vogelscheuche == false)
+    {
+        sent_vogelscheuche = true;
+
+        for (int i = 0; i <= 3; i++)
+        {
+            if (porttype[i] == 3)
+            {
+                curPort.end();
+                waitingForAnswer = false;
+                if (i == 0)
+                {
+                    curPort = serialPortOne;
+                }
+                else if (i == 1)
+                {
+                    curPort = serialPortTwo;
+                }
+                else if (i == 2)
+                {
+                    curPort = serialPortThree;
+                }
+                else if (i == 3)
+                {
+                    curPort = serialPortFour;
+                }
+
+                setComLED("tx");
+                curPort.begin(9600);
+                curPort.print('V');
+                curPort.print('$');
+            }
+        }
+    }
+
+    if (minString == "30" && sent_stop_playing == false) {
+        sent_stop_playing = true;
+
+        Serial1.print('r');
+        controllerStatus = 'a';
+        showRunningMillis = 0;
+    }
+
     Serial.println("Mins: " + minString + " Secs: " + secString);
 }
 
 void loop()
 {
-    if (showRunningMillis != 0)
+    if (showRunningMillis != 0 || (showRunningMillis == 0 && (digitZero != '0' || digitOne != '0' || digitTwo != '0' || digitThree != '0' || digitFour != '0')))
     {
         checkTime();
     }
