@@ -250,12 +250,15 @@ extern uint8_t logobody[];
 extern uint8_t logoeye[];
 extern uint8_t heart[];
 extern uint8_t heartout[];
+extern uint8_t otto_small[];
+extern uint8_t eye_small[];
 
 // Tft display
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 // Lower bar Home Screen
 unsigned long showRunningMillis = 0;
+char digitZero = '0';
 char digitOne = '0';
 char digitTwo = '0';
 char digitThree = '0';
@@ -694,8 +697,17 @@ void enableCrisis()
 
 void displayClock(int digit, char number)
 {
+    if (curPage != -1) {
+        return;
+    }
+    tft.setTextSize(2);
     switch (digit)
     {
+    case 0:
+        tft.fillRect(228, 210, 10, 15, LCD_WHITE);
+        tft.setCursor(228, 210);
+        tft.print(String(number));
+        break;
     case 1:
         tft.fillRect(240, 210, 10, 15, LCD_WHITE);
         tft.setCursor(240, 210);
@@ -1159,8 +1171,13 @@ void renderCreditsPage()
 {
     handleSelection('c');
     tft.fillScreen(LCD_WHITE);
+    tft.drawBitmap(5, 5, otto_small, 51, 50, LCD_BLACK);
+    tft.drawBitmap(25, 19, eye_small, 3, 2, LCD_BLUE);
+    tft.drawBitmap(34, 19, eye_small, 3, 2, LCD_PINK);
+    /*
     tft.drawBitmap(5, 5, heart, 53, 53, LCD_RED);
     tft.drawBitmap(5, 5, heartout, 53, 53, LCD_BLACK);
+    */
 
     tft.setCursor(75, 14);
     tft.setTextColor(LCD_ORANGE);
@@ -2269,6 +2286,12 @@ void checkTime()
         secString = "0" + secString;
     }
 
+    if (minString.charAt(2) != NULL && minString.charAt(0) != digitZero) {
+        digitZero = minString.charAt(0);
+        displayClock(0, minString.charAt(0));
+        minString.remove(0,1);
+    }
+
     if (minString.charAt(0) != digitOne)
     {
         digitOne = minString.charAt(0);
@@ -2329,6 +2352,8 @@ void checkTime()
         sent_stop_playing = true;
 
         Serial1.print('r');
+        controllerStatus = 'a';
+        showRunningMillis = 0;
     }
 
     Serial.println("Mins: " + minString + " Secs: " + secString);
@@ -2336,7 +2361,7 @@ void checkTime()
 
 void loop()
 {
-    if (showRunningMillis != 0)
+    if (showRunningMillis != 0 || (showRunningMillis == 0 && (digitZero != '0' || digitOne != '0' || digitTwo != '0' || digitThree != '0' || digitFour != '0')))
     {
         checkTime();
     }
