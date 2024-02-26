@@ -16,18 +16,6 @@
 #define LCD_RD A0
 #define LCD_RESET A4
 
-// LCD Colors
-
-#define LCD_BLACK 0x0000
-#define LCD_BLUE 0x001F
-#define LCD_RED 0xF800
-#define LCD_GREEN 0x07E0
-#define LCD_CYAN 0x07FF
-#define LCD_PINK 0xF81F
-#define LCD_YELLOW 0xFFE0
-#define LCD_ORANGE 0xFD40
-#define LCD_WHITE 0xFFFF
-
 // Controller button pins
 
 int start_btn = 25;
@@ -244,14 +232,6 @@ bool nav_right_btn_debug = false;
 bool com_led_disable_btn_debug = false;
 bool crisis_btn_debug = false;
 bool start_btn_debug = false;
-
-// Bitmaps for logo
-extern uint8_t logobody[];
-extern uint8_t logoeye[];
-extern uint8_t heart[];
-extern uint8_t heartout[];
-extern uint8_t otto_small[];
-extern uint8_t eye_small[];
 
 // Tft display
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
