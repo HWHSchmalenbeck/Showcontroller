@@ -33,11 +33,19 @@ enum ActivationState {
 
 class Area {
     public:
+        int ID;
         char[16] Name;
-        ButtonDevice Linked_Button_Device;
+        char Linked_Button_ID;
+        Device Linked_Button_Device;
         AreaType Type;
-        ButtonDevice Switcher_Linked_Button_Device;
-        void changeLinkedButtonDevice(ButtonDevice New_Button_Device);
+        int Switcher_Linked_Area_ID;
+        void changeLinkedButtonDevice(Device new_button_device);
+        Area(
+            int id, char[16] name, 
+            char linked_button_id, AreaType type,
+            int switcher_linked_area = NULL
+        );
+        bool retrieveLinkedButtonDevice(DeviceList device_list);
 }
 
 // Device Classes
@@ -47,67 +55,27 @@ class Device {
         DeviceType Type;
         char ID;
         int Port_Number;
-        char exportDeviceType();
-}
-
-class ButtonDevice : Device {
-    public:
         ButtonStatus Status;
         ActivationState Bypass;
         ActivationState Manual_Activation;
         char exportButtonStatus();
-        void changeBypass(ActivationState New_State);
-        void changeManualActivation(ActivationState New_State);
-}
-
-class SwitchDevice : Device {
-    public:
-        void nothing();
-}
-
-class AnimatronicDevice : Device {
-    public:
-        void nothing();
-
+        void changeBypass(ActivationState new_state);
+        void changeManualActivation(ActivationState new_state);
+        char exportDeviceType();
 }
 
 // DeviceList Classes
 
-class ButtonDeviceList {
+class DeviceList {
     public:
         int Size;
-        void addDevice(ButtonDevice device);
-        void removeDevice(ButtonDevice device = NULL, char ID = NULL);
-        ButtonDevice findDevice(char ID);
+        void addDevice(Device device);
+        void removeDevice(Device device = NULL, char id = NULL);
+        Device findDevice(char id, DeviceType type);
     
     private:
-        ButtonDevice[20] Device_List;
-        char[20] ID_List;
+        ButtonDevice[20] _Device_List;
+        char[20] _ID_List;
 }
-
-class SwitchDeviceList {
-    public:
-        int Size;
-        void addDevice(SwitchDevice device);
-        void removeDevice(SwitchDevice device = NULL, char ID = NULL);
-        SwitchDevice findDevice(char ID);
-
-    private:
-        SwitchDevice[4] Device_List;
-        char[4] ID_List;
-}
-
-class AnimatronicDeviceList {
-    public:
-        int Size;
-        void addDevice(AnimatronicDevice device);
-        void removeDevice(AnimatronicDevice device);
-        AnimatronicDevice findDevice(char ID);
-    
-    private:
-        AnimatronicDevice[20] Device_List;
-        char[20] ID_List;
-}
-
 
 #endif

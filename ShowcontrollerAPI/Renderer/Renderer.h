@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "Devices.h"
+#include "Controller.h"
 #include <Elegoo_GFX.h>
 #include <Elegoo_TFTLCD.h>
 
@@ -35,8 +36,11 @@ uint16_t Status_N_Color = LCD_BLACK;
 
 class Clock {
     public:
-        unsigned long Show_Running_Millis;
         char[5] Digits;
+        char getDigit(int digit);
+    private:
+        Show _show;
+
 }
 
 class Renderer {
@@ -44,10 +48,10 @@ class Renderer {
         int Current_Selection;
         int Current_Page;
         Elegoo_TFTLCD tft;
-        void begin(
-            int LCD_CS, int LCD_CD, 
+        Renderer(int LCD_CS, int LCD_CD, 
             int LCD_WR, int LCD_RD, 
             int LCD_RESET, Clock clock);
+        void begin();
         void displayStartup();
         void renderSelection(int id, bool negative = false);
         void displayClock(int digit);
@@ -58,8 +62,7 @@ class Renderer {
         void renderSettingsPage();
         void renderCreditsPage();
         void renderDebugPage();
-
-        
+        void handleDebugPage()        
 
     private:
         int _LCD_CS;
@@ -68,7 +71,7 @@ class Renderer {
         int _LCD_RD;
         int _LCD_RESET;
         Clock _clock;
-        uint16_t getLCDColor(char status);
+        uint16_t _getLCDColor(char status);
 }
 
 #endif
