@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "Devices.h"
 #include "Renderer.h"
+#include "Communicator.h"
 
 enum ControllerStatus {
     IDLE,
@@ -20,7 +21,13 @@ struct Color {
 };
 
 struct Config {
-    Area Areas[20];
+    Area *Areas[20];
+
+    int LCD_CS;
+    int LCD_CD; 
+    int LCD_WR;
+    int LCD_RD;
+    int LCD_RESET;
 
     int Start_Button_Pin;
     int Crisis_Button_Pin;
@@ -44,25 +51,6 @@ struct Config {
     int Status_Led_Blue_Pin;
 };
 
-class Controller {
-    public:
-        int Port_Count;
-        ControllerStatus Controller_Status;
-        Controller(Config config);
-        void activatePartyMode();
-        void lampTest(bool mode);
-
-    private:
-        const int STATUS_RED[3] = {255,0,0};
-        const int STATUS_ORANGE[3] = {255,50,0};
-        const int STATUS_YELLOW[3] = {255,255,0};
-        const int STATUS_GREEN[3] = {0,255,0};
-        const int STATUS_BLUE[3] = {0,0,255};
-        const int STATUS_PINK[3] = {255,20,147};
-        const int STATUS_BLACK[3] = {0,0,0};
-        Config _config; 
-};
-
 class Show {
     public:
         unsigned long Show_Running_Millis;
@@ -83,7 +71,30 @@ class ButtonHandler {
         void checkForButtonActive();
     
     private:
-        Config _config;
+        Config _Config;
+};
+
+class Controller {
+    public:
+        int Port_Count;
+        ControllerStatus Controller_Status;
+        Controller(Config config);
+        void activatePartyMode();
+        void lampTest(bool mode);
+
+    private:
+        const int STATUS_RED[3] = {255,0,0};
+        const int STATUS_ORANGE[3] = {255,50,0};
+        const int STATUS_YELLOW[3] = {255,255,0};
+        const int STATUS_GREEN[3] = {0,255,0};
+        const int STATUS_BLUE[3] = {0,0,255};
+        const int STATUS_PINK[3] = {255,20,147};
+        const int STATUS_BLACK[3] = {0,0,0};
+        Config _Config;
+        Show _Show;
+        ButtonHandler _Button_Handler;
+        Communicator _Communicator;
+        DeviceList _Device_List;
 };
 
 #endif

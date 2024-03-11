@@ -38,9 +38,6 @@ class Clock {
     public:
         char Digits[5];
         char getDigit(int digit);
-    private:
-        Show _show;
-
 };
 
 class Renderer {

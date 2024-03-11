@@ -14,7 +14,7 @@ enum DeviceType {
 enum ButtonStatus {
     OKAY,
     ACTIVATED,
-    CRISIS,
+    RUNCRISIS,
     ERRORCONST,
     ERRORNEVER
 };
@@ -27,25 +27,6 @@ enum AreaType {
 enum ActivationState {
     INACTIVE,
     ACTIVE
-};
-
-// Area Class
-
-class Area {
-    public:
-        int ID;
-        char Name[16];
-        char Linked_Button_ID;
-        Device Linked_Button_Device;
-        AreaType Type;
-        int Switcher_Linked_Area_ID;
-        void changeLinkedButtonDevice(Device new_button_device);
-        Area(
-            int id, char name[16], 
-            char linked_button_id, AreaType type,
-            int switcher_linked_area = NULL
-        );
-        bool retrieveLinkedButtonDevice(DeviceList device_list);
 };
 
 // Device Classes
@@ -76,6 +57,26 @@ class DeviceList {
     private:
         Device _Device_List[20];
         char _ID_List[20];
+};
+
+// Area Class
+
+class Area {
+    public:
+        int ID;
+        String Name;
+        char Linked_Button_ID;
+        Device Linked_Button_Device;
+        AreaType Type;
+        int Switcher_Linked_Area_ID;
+        void changeLinkedButtonDevice(Device new_button_device);
+        Area() {};
+        Area(
+            int id, String name, 
+            char linked_button_id, AreaType type,
+            int switcher_linked_area = NULL
+        );
+        bool retrieveLinkedButtonDevice(DeviceList device_list);
 };
 
 #endif

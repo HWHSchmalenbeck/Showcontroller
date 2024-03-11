@@ -10,6 +10,13 @@
  *
  */
 
+Area AreaList[20] = {
+    Area(1,"Test",'A', SHOW_ACTIVATOR),
+};
+
+Config config {
+};
+
 // LCD Pins
 #define LCD_CS A3
 #define LCD_CD A2
