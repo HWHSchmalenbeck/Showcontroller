@@ -1565,7 +1565,6 @@ void handleCrisisBtn()
     else
     {
         enableCrisis();
-        ;
     }
 }
 
