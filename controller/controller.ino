@@ -1,7 +1,8 @@
-#include <SoftwareSerial.h>
+#define SC_CONTROLLER
+/*#include <SoftwareSerial.h>
 #include <Elegoo_GFX.h>
-#include <Elegoo_TFTLCD.h>
-
+#include <Elegoo_TFTLCD.h>*/
+#include <ShowcontrollerAPI.h>
 /*
  *
  *  Config
@@ -677,7 +678,8 @@ void enableCrisis()
 
 void displayClock(int digit, char number)
 {
-    if (curPage != -1) {
+    if (curPage != -1)
+    {
         return;
     }
     tft.setTextSize(2);
@@ -2266,10 +2268,11 @@ void checkTime()
         secString = "0" + secString;
     }
 
-    if (minString.charAt(2) != NULL && minString.charAt(0) != digitZero) {
+    if (minString.charAt(2) != NULL && minString.charAt(0) != digitZero)
+    {
         digitZero = minString.charAt(0);
         displayClock(0, minString.charAt(0));
-        minString.remove(0,1);
+        minString.remove(0, 1);
     }
 
     if (minString.charAt(0) != digitOne)
@@ -2328,7 +2331,8 @@ void checkTime()
         }
     }
 
-    if (minString == "30" && sent_stop_playing == false) {
+    if (minString == "30" && sent_stop_playing == false)
+    {
         sent_stop_playing = true;
 
         Serial1.print('r');

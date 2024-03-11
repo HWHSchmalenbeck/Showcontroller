@@ -9,7 +9,7 @@ enum DeviceType {
     BUTTON,
     SWITCH,
     ANIMATRONIC
-}
+};
 
 enum ButtonStatus {
     OKAY,
@@ -17,36 +17,36 @@ enum ButtonStatus {
     CRISIS,
     ERRORCONST,
     ERRORNEVER
-}
+};
 
 enum AreaType {
     SHOW_ACTIVATOR,
     SWITCHER
-}
+};
 
 enum ActivationState {
     INACTIVE,
     ACTIVE
-}
+};
 
 // Area Class
 
 class Area {
     public:
         int ID;
-        char[16] Name;
+        char Name[16];
         char Linked_Button_ID;
         Device Linked_Button_Device;
         AreaType Type;
         int Switcher_Linked_Area_ID;
         void changeLinkedButtonDevice(Device new_button_device);
         Area(
-            int id, char[16] name, 
+            int id, char name[16], 
             char linked_button_id, AreaType type,
             int switcher_linked_area = NULL
         );
         bool retrieveLinkedButtonDevice(DeviceList device_list);
-}
+};
 
 // Device Classes
 
@@ -62,7 +62,7 @@ class Device {
         void changeBypass(ActivationState new_state);
         void changeManualActivation(ActivationState new_state);
         char exportDeviceType();
-}
+};
 
 // DeviceList Classes
 
@@ -70,12 +70,12 @@ class DeviceList {
     public:
         int Size;
         void addDevice(Device device);
-        void removeDevice(Device device = NULL, char id = NULL);
+        void removeDevice(Device device, char id = NULL);
         Device findDevice(char id, DeviceType type);
     
     private:
-        ButtonDevice[20] _Device_List;
-        char[20] _ID_List;
-}
+        Device _Device_List[20];
+        char _ID_List[20];
+};
 
 #endif

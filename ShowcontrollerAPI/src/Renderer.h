@@ -36,12 +36,12 @@ uint16_t Status_N_Color = LCD_BLACK;
 
 class Clock {
     public:
-        char[5] Digits;
+        char Digits[5];
         char getDigit(int digit);
     private:
         Show _show;
 
-}
+};
 
 class Renderer {
     public:
@@ -62,7 +62,7 @@ class Renderer {
         void renderSettingsPage();
         void renderCreditsPage();
         void renderDebugPage();
-        void handleDebugPage()        
+        void handleDebugPage();     
 
     private:
         int _LCD_CS;
@@ -72,6 +72,6 @@ class Renderer {
         int _LCD_RESET;
         Clock _clock;
         uint16_t _getLCDColor(char status);
-}
+};
 
 #endif
