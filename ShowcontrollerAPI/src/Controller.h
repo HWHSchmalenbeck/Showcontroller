@@ -95,6 +95,7 @@ class Controller {
         ButtonHandler _Button_Handler;
         Communicator _Communicator;
         DeviceList _Device_List;
+        Renderer _Renderer;
 };
 
 #endif

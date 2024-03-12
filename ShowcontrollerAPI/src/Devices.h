@@ -55,7 +55,7 @@ class DeviceList {
         Device findDevice(char id, DeviceType type);
     
     private:
-        Device _Device_List[20];
+        Device *_Device_List[20];
         char _ID_List[20];
 };
 
