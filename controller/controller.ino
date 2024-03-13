@@ -5,16 +5,39 @@
 #include <ShowcontrollerAPI.h>
 /*
  *
+ *  Area List
+ *  
+ *  Add Area by adding the following line to the list:
+ *  
+ *  Area([ID], [NAME], [BUTTON ID], [AREA TYPE], [LINKED SWITCHER ID (OPTIONAL)])
+ *
+ *  Area Types:
+ *  
+ *  SWITCHER: Requires another area to work.
+ *  SHOW_ACTIVATOR: Is required to start the show.
+ *
+*/
+
+Area AreaList[20] = {
+    Area(1, "Eingang", 'A', SWITCHER, 2),
+    Area(2, "Hexe 1", 'B', SWITCHER, 1),
+    Area(3, "Hexe 2", 'C', SHOW_ACTIVATOR),
+    Area(4, "Labor", 'D', SHOW_ACTIVATOR),
+    Area(5, "Friedhof", 'E', SHOW_ACTIVATOR),
+    Area(6, "Ausgang", 'F', SHOW_ACTIVATOR)
+};
+
+/*
+ *
  *  Config
  *
  *
  */
 
-Area AreaList[20] = {
-    Area(1,"Test",'A', SHOW_ACTIVATOR),
-};
 
 Config config {
+    AreaList, // DO NOT CHANGE
+
 };
 
 // LCD Pins
