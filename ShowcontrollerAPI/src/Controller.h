@@ -54,7 +54,7 @@ class ControllerConfig {
         int Status_Led_Blue_Pin;
 
         ControllerConfig(
-            Area *areas, int lcd_cs, int lcd_cs, int lcd_wr,
+            Area *areas, int lcd_cs, int lcd_cd, int lcd_wr,
             int lcd_rd, int lcd_reset, int start_button_pin,
             int crisis_button_pin, int page_button_pin, int home_button_pin,
             int nav_left_button_pin, int nav_enter_button_pin, int nav_right_button_pin,
