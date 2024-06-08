@@ -35,12 +35,14 @@ class Area {
         String name;
         char link;
 
-        Area(String areaname, char arealink) {
-            this->name = areaname;
-            this->link = arealink;
-        };
+        Area(String areaname, char arealink);
         Area() {};
 };
+
+Area::Area(String areaname, char arealink) {
+    this->name = areaname;
+    this->link = arealink;
+}
 
 
 class Port {
@@ -49,14 +51,9 @@ class Port {
         String ids;
         int size;
 
-        Port(int porttype, String portids, int portsize) {
-            this->type = porttype;
-            this->ids = portids;
-            this->size = portsize;
-        };
+
         Port() {};
 };
-
 
 class Button {
     public:
@@ -64,12 +61,14 @@ class Button {
         bool bypass;
         bool manualActivation;
 
-        Button(char btnStatus) {
-            this->status = btnStatus;
-            this->bypass = false;
-            this->manualActivation = false;
-        };
+        Button(char btnStatus);
         Button() {};
+};
+
+Button::Button(char btnStatus) {
+    this->status = btnStatus;
+    this->bypass = false;
+    this->manualActivation = false;
 }
 
 // Controller button pins
@@ -165,6 +164,15 @@ bool waitingForAnswer = false;
 unsigned long waitingForAnswerMillis = 0;
 int maxWaitingForAnswerMillis = 1000;
 
+// Ports
+
+Port ports[4] = {
+    Port(),
+    Port(),
+    Port(),
+    Port()
+};
+
 /*
  *
  *  Port type
@@ -205,6 +213,8 @@ int portsize[4] = {};
  *  e.g. A = 0, B = 1 , etc.
  *
  */
+
+Button buttons[23] = {};
 
 char btnStatus[10] = {};
 
