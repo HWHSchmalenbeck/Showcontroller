@@ -28,6 +28,50 @@
 #define LCD_ORANGE 0xFD40
 #define LCD_WHITE 0xFFFF
 
+// Classes
+
+class Area {
+    public:
+        String name;
+        char link;
+
+        Area(String areaname, char arealink) {
+            this->name = areaname;
+            this->link = arealink;
+        };
+        Area() {};
+};
+
+
+class Port {
+    public:
+        int type;
+        String ids;
+        int size;
+
+        Port(int porttype, String portids, int portsize) {
+            this->type = porttype;
+            this->ids = portids;
+            this->size = portsize;
+        };
+        Port() {};
+};
+
+
+class Button {
+    public:
+        char status;
+        bool bypass;
+        bool manualActivation;
+
+        Button(char btnStatus) {
+            this->status = btnStatus;
+            this->bypass = false;
+            this->manualActivation = false;
+        };
+        Button() {};
+}
+
 // Controller button pins
 
 int start_btn = 25;
@@ -64,8 +108,8 @@ int curSelection = -1;
  *
  *  Page Type
  *
- *  -1   ->  Home
  *  0-5  ->  Button Page
+ *  -1   ->  Home
  *  -2   ->  Settings
  *  -3   ->  Credits
  *  -4   ->  Debug
@@ -90,9 +134,16 @@ int curPage = -1;
  *
  */
 
-String areaname[6] = {"Eingang", "Hexe 1", "Hexe 2", "Labor", "Friedhof", "Ausgang"};
+Area areas[6] = {
+    Area("Eingang", 'A'),
+    Area("Hexe 1", 'B'),
+    Area("Hexe 2", 'C'),
+    Area("Labor", 'D'),
+    Area("Friedhof", 'E'),
+    Area("Ausgang", 'F')
+    };
 
-char arealinking[6] = {'A', 'B', 'C', 'D', 'E', 'F'};
+
 
 /*
  *
@@ -458,14 +509,14 @@ void startShow()
     controllerStatus = 'a';
     for (i; i <= 5; i++)
     {
-        if (btnStatus[arealinking[i] - 'A'] == 'b')
+        if (btnStatus[areas[i].link - 'A'] == 'b')
         {
-            btnStatus[arealinking[i] - 'A'] = 'a';
+            btnStatus[areas[i].link - 'A'] = 'a';
         }
         for (int j = 0; j <= 3; j++)
         {
             delay(10);
-            if (portids[j].indexOf(arealinking[i]) != -1)
+            if (portids[j].indexOf(areas[i].link) != -1)
             {
                 curPort.end();
                 waitingForAnswer = false;
@@ -487,7 +538,7 @@ void startShow()
                 }
                 curPort.begin(9600);
                 setComLED("tx");
-                curPort.print(arealinking[i]);
+                curPort.print(areas[i].link);
                 curPort.print('s');
                 break;
             }
@@ -959,7 +1010,7 @@ void renderHomeStatus()
     }
 
     // Top Left Status
-    areacolor = getLCDColor(btnStatus[arealinking[0] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[0].link - 'A']);
     tft.fillRect(15, 20, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -968,7 +1019,7 @@ void renderHomeStatus()
     }
 
     // Middle Left Status
-    areacolor = getLCDColor(btnStatus[arealinking[2] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[2].link - 'A']);
     tft.fillRect(15, 76, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -977,7 +1028,7 @@ void renderHomeStatus()
     }
 
     // Bottom Left Status
-    areacolor = getLCDColor(btnStatus[arealinking[4] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[4].link - 'A']);
     tft.fillRect(15, 132, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -986,7 +1037,7 @@ void renderHomeStatus()
     }
 
     // Top Right Status
-    areacolor = getLCDColor(btnStatus[arealinking[1] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[1].link - 'A']);
     tft.fillRect(170, 20, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -995,7 +1046,7 @@ void renderHomeStatus()
     }
 
     // Middle Right Status
-    areacolor = getLCDColor(btnStatus[arealinking[3] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[3].link - 'A']);
     tft.fillRect(170, 76, 26, 26, areacolor);
 
     if (curPage != -1)
@@ -1004,7 +1055,7 @@ void renderHomeStatus()
     }
 
     // Bottom Right Status
-    areacolor = getLCDColor(btnStatus[arealinking[5] - 'A']);
+    areacolor = getLCDColor(btnStatus[areas[5].link - 'A']);
     tft.fillRect(170, 132, 26, 26, areacolor);
 
     return;
@@ -1024,7 +1075,7 @@ void renderHome()
     tft.setCursor(52, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[0]);
+    tft.print(areas[0].name);
 
     // Middle Left Status
     // areacolor = getcolor(btnStatus[arealinking[2] - 'A']);
@@ -1032,7 +1083,7 @@ void renderHome()
     tft.setCursor(52, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[2]);
+    tft.print(areas[2].name);
 
     // Bottom Left Status
     // areacolor = getcolor(btnStatus[arealinking[4] - 'A']);
@@ -1040,7 +1091,7 @@ void renderHome()
     tft.setCursor(52, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[4]);
+    tft.print(areas[4].name);
 
     // Top Right Status
     // areacolor = getcolor(btnStatus[arealinking[1] - 'A']);
@@ -1048,7 +1099,7 @@ void renderHome()
     tft.setCursor(207, 26);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[1]);
+    tft.print(areas[1].name);
 
     // Middle Right Status
     // areacolor = getcolor(btnStatus[arealinking[3] - 'A']);
@@ -1056,7 +1107,7 @@ void renderHome()
     tft.setCursor(207, 82);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[3]);
+    tft.print(areas[3].name);
 
     // Bottom Right Status
     // areacolor = getcolor(btnStatus[arealinking[5] - 'A']);
@@ -1064,7 +1115,7 @@ void renderHome()
     tft.setCursor(207, 138);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[5]);
+    tft.print(areas[5].name);
 
     renderHomeStatus();
 
@@ -1097,7 +1148,7 @@ void renderButtonPage(int number)
     tft.setCursor(8, 8);
     tft.setTextSize(2);
     tft.setTextColor(LCD_BLACK);
-    tft.print(areaname[number]);
+    tft.print(areas[number].name);
 
     tft.drawRect(5, 75, 150, 75, LCD_BLACK);
     tft.setCursor(40, 105);
@@ -1106,7 +1157,7 @@ void renderButtonPage(int number)
     tft.drawRect(79, 96, 30, 30, LCD_BLACK);
     tft.setCursor(89, 104);
     tft.setTextSize(2);
-    tft.print(arealinking[number]);
+    tft.print(areas[number].link);
 
     tft.drawRect(165, 75, 150, 75, LCD_BLACK);
     tft.setCursor(175, 105);
@@ -1115,7 +1166,7 @@ void renderButtonPage(int number)
     tft.drawRect(259, 96, 30, 30, LCD_BLACK);
     tft.setCursor(269, 104);
     tft.setTextSize(2);
-    tft.print(btnStatus[arealinking[number] - 'A']);
+    tft.print(btnStatus[areas[number].link - 'A']);
 
     tft.drawRect(5, 160, 150, 75, LCD_BLACK);
     tft.drawRect(19, 186, 27, 22, LCD_BLACK);
@@ -1494,10 +1545,10 @@ void handleStartBtn()
             witchEmpty = false;
             for (int i = 0; i <= 1; i++)
             {
-                btnStatus[arealinking[i] - 'A'] = 'a';
+                btnStatus[areas[i].link - 'A'] = 'a';
                 for (int j = 0; j <= 3; j++)
                 {
-                    if (portids[j].indexOf(arealinking[i]) != -1)
+                    if (portids[j].indexOf(areas[i].link) != -1)
                     {
                         curPort.end();
                         waitingForAnswer = false;
@@ -1520,7 +1571,7 @@ void handleStartBtn()
 
                         setComLED("tx");
                         curPort.begin(9600);
-                        curPort.print(arealinking[i]);
+                        curPort.print(areas[i].link);
                         curPort.print('s');
                         break;
                     }
@@ -2013,38 +2064,38 @@ void statusCheck()
         }
     }
 
-    if (btnStatus[arealinking[0] - 'A'] == 'n')
+    if (btnStatus[areas[0].link - 'A'] == 'n')
     {
         area_one_reconnect = true;
     }
-    else if (btnStatus[arealinking[0] - 'A'] != 'n' && area_one_reconnect == true)
+    else if (btnStatus[areas[0].link - 'A'] != 'n' && area_one_reconnect == true)
     {
         sent_area_one_blink = false;
     }
-    if (btnStatus[arealinking[1] - 'A'] == 'n')
+    if (btnStatus[areas[1].link - 'A'] == 'n')
     {
         area_two_reconnect = true;
     }
-    else if (btnStatus[arealinking[1] - 'A'] != 'n' && area_two_reconnect == true)
+    else if (btnStatus[areas[1].link - 'A'] != 'n' && area_two_reconnect == true)
     {
         sent_area_two_blink = false;
     }
 
-    if ((btnStatus[arealinking[2] - 'A'] == 'n' && btnBypass[2] == false) ||
-        (btnStatus[arealinking[3] - 'A'] == 'n' && btnBypass[3] == false) ||
-        (btnStatus[arealinking[4] - 'A'] == 'n' && btnBypass[4] == false))
+    if ((btnStatus[areas[2].link - 'A'] == 'n' && btnBypass[2] == false) ||
+        (btnStatus[areas[3].link - 'A'] == 'n' && btnBypass[3] == false) ||
+        (btnStatus[areas[4].link - 'A'] == 'n' && btnBypass[4] == false))
     {
         btn_pressed_reconnect = true;
     }
-    else if ((btnStatus[arealinking[2] - 'A'] != 'n' || btnBypass[2] == true) &&
-             (btnStatus[arealinking[3] - 'A'] != 'n' || btnBypass[2] == true) &&
-             (btnStatus[arealinking[4] - 'A'] != 'n' || btnBypass[2] == true) &&
+    else if ((btnStatus[areas[2].link - 'A'] != 'n' || btnBypass[2] == true) &&
+             (btnStatus[areas[3].link - 'A'] != 'n' || btnBypass[2] == true) &&
+             (btnStatus[areas[4].link - 'A'] != 'n' || btnBypass[2] == true) &&
              btn_pressed_reconnect == true)
     {
         sent_btn_pressed_blink = false;
     }
 
-    if (btnStatus[arealinking[2] - 'A'] == 'b')
+    if (btnStatus[areas[2].link - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
@@ -2053,7 +2104,7 @@ void statusCheck()
         areaTwoBypassBtns += 1;
     }
 
-    if (btnStatus[arealinking[3] - 'A'] == 'b')
+    if (btnStatus[areas[3].link - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
@@ -2062,7 +2113,7 @@ void statusCheck()
         areaTwoBypassBtns += 1;
     }
 
-    if (btnStatus[arealinking[4] - 'A'] == 'b')
+    if (btnStatus[areas[4].link - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
@@ -2071,7 +2122,7 @@ void statusCheck()
         areaTwoBypassBtns += 1;
     }
 
-    if (btnStatus[arealinking[5] - 'A'] == 'b')
+    if (btnStatus[areas[5].link - 'A'] == 'b')
     {
         areaTwoBtns += 1;
     }
@@ -2084,13 +2135,13 @@ void statusCheck()
     {
         // Area 1
 
-        if (btnStatus[arealinking[0] - 'A'] == 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b' && sent_area_two_blink == false)
+        if (btnStatus[areas[0].link - 'A'] == 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[areas[1].link - 'A'] != 'b' && sent_area_two_blink == false)
         {
             sent_area_two_blink = true;
             witch_status_sent_millis = millis();
             for (int i = 0; i <= 3; i++)
             {
-                if (portids[i].indexOf(arealinking[1]) != -1)
+                if (portids[i].indexOf(areas[1].link) != -1)
                 {
                     curPort.end();
                     waitingForAnswer = false;
@@ -2113,20 +2164,20 @@ void statusCheck()
 
                     setComLED("tx");
                     curPort.begin(9600);
-                    curPort.print(arealinking[1]);
+                    curPort.print(areas[1].link);
                     curPort.print('b');
                     break;
                 }
             }
         }
-        else if (btnStatus[arealinking[0] - 'A'] != 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[arealinking[1] - 'A'] != 'b' && sent_area_one_blink == false)
+        else if (btnStatus[areas[0].link - 'A'] != 'b' && witchEmpty == true && millis() - witch_status_sent_millis >= 2000 && btnStatus[areas[1].link - 'A'] != 'b' && sent_area_one_blink == false)
         {
             witch_status_sent_millis = millis();
             sent_area_one_blink = true;
             sent_area_two_blink = false;
             for (int i = 0; i <= 3; i++)
             {
-                if (portids[i].indexOf(arealinking[0]) != -1)
+                if (portids[i].indexOf(areas[0].link) != -1)
                 {
                     curPort.end();
                     waitingForAnswer = false;
@@ -2149,14 +2200,14 @@ void statusCheck()
 
                     setComLED("tx");
                     curPort.begin(9600);
-                    curPort.print(arealinking[0]);
+                    curPort.print(areas[0].link);
                     curPort.print('b');
                     break;
                 }
             }
         }
 
-        if (btnStatus[arealinking[0] - 'A'] == 'b' && btnStatus[arealinking[1] - 'A'] == 'b' && witchEmpty == true)
+        if (btnStatus[areas[0].link - 'A'] == 'b' && btnStatus[areas[1].link - 'A'] == 'b' && witchEmpty == true)
         {
             if (witch_wait_millis == 0)
             {
@@ -2171,10 +2222,10 @@ void statusCheck()
                 sent_area_two_blink = false;
                 for (int i = 0; i <= 1; i++)
                 {
-                    btnStatus[arealinking[i] - 'A'] = 'a';
+                    btnStatus[areas[i].link - 'A'] = 'a';
                     for (int j = 0; j <= 3; j++)
                     {
-                        if (portids[j].indexOf(arealinking[i]) != -1)
+                        if (portids[j].indexOf(areas[i].link) != -1)
                         {
                             curPort.end();
                             waitingForAnswer = false;
@@ -2197,7 +2248,7 @@ void statusCheck()
 
                             setComLED("tx");
                             curPort.begin(9600);
-                            curPort.print(arealinking[i]);
+                            curPort.print(areas[i].link);
                             curPort.print('s');
                             break;
                         }
@@ -2221,7 +2272,7 @@ void statusCheck()
             {
                 for (int j = 0; j <= 3; j++)
                 {
-                    if (portids[j].indexOf(arealinking[i]) != -1)
+                    if (portids[j].indexOf(areas[i].link) != -1)
                     {
                         curPort.end();
                         waitingForAnswer = false;
@@ -2244,7 +2295,7 @@ void statusCheck()
 
                         setComLED("tx");
                         curPort.begin(9600);
-                        curPort.print(arealinking[i]);
+                        curPort.print(areas[i].link);
                         curPort.print('b');
                         break;
                     }
