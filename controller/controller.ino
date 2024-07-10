@@ -654,6 +654,7 @@ void resetStatus()
     lastCrisisDisable = millis();
     lastBtnSentAction = millis();
     timeSinceReset = millis();
+    Serial1.print('r');
     return;
 }
 
