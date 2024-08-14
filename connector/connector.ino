@@ -36,9 +36,9 @@ void setup() {
 
     if (ethernetStatus != 0) {
         maintainMillis = millis();
-    }
 
-    MIDI.begin();
+        MIDI.begin();
+    }
 
     AppleMIDI
   .setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t & ssrc, const char* name) {
@@ -150,7 +150,9 @@ void checkIgnore() {
 }
 
 void loop() {
-    MIDI.read();
+    if (ethernetStatus != 0) {
+        MIDI.read();
+    }
 
     if (ethernetStatus != 0 && (millis() - maintainMillis) > 500) {
         int maintainStatus = Ethernet.maintain();

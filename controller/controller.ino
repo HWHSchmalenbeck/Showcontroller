@@ -261,7 +261,10 @@ bool waiting_connector_check = false;
 */
 
 bool currentlyDisplayingError = false;
+char currentError = '0';
 String ignoringErros = "";
+uint16_t errorColor = LCD_RED;
+bool errorColored = true;
 
 // Bitmaps for logo
 extern uint8_t logobody[];
@@ -1340,14 +1343,14 @@ void renderDebugPage()
     return;
 }
 
-void renderError(char error, int severity) {
+void renderError(char error, int severity, char activator = '0') {
     if (currentlyDisplayingError == true || ignoringErros.indexOf(error) != -1) {
         return;
     }
 
     currentlyDisplayingError = true;
-
-    uint16_t errorColor = LCD_WHITE;
+    currentError = error;
+    errorColored = true;
 
     switch (severity) {
         case -1:
@@ -1400,9 +1403,29 @@ void renderError(char error, int severity) {
     
     switch (error) {
         case '1':
+            tft.setCursor(120, 84);
+            tft.print("Typ: Partiell");
+
+            tft.setTextSize(2);
+            tft.setCursor(78, 110);
+            tft.print("Aktiviert von:");
+
+            tft.setCursor(126, 130);
+            tft.print("Area " + String(activator));
+            tft.setTextSize(1);
             break;
         
         case '2':
+            tft.setCursor(128, 84);
+            tft.print("Typ: Global");
+
+            tft.setTextSize(2);
+            tft.setCursor(78, 110);
+            tft.print("Aktiviert von:");
+
+            tft.setCursor(126, 130);
+            tft.print("Area " + String(activator));
+            tft.setTextSize(1);
             break;
 
         case 'b':
@@ -1437,30 +1460,39 @@ void renderError(char error, int severity) {
             tft.setCursor(78, 120);
             tft.print("AppleMIDI-Session verbunden.");
             break;
+
+        case 'e':
+            tft.setCursor(114, 84);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(82, 120);
+            tft.print("Connector antwortet nicht.");
     }
 
     if (severity > 0) {
         tft.setCursor(88, 166);
         tft.print("Klicke die Home Taste um");
+        switch (severity) {
+            case 1:
+                tft.setCursor(86, 178);
+                tft.print("diese Info zu ignorieren.");
+                break;
+        
+            case 2:
+                tft.setCursor(78, 178);
+                tft.print("diese Warnung zu ignorieren.");
+                break;
+        
+            case 3:
+                tft.setCursor(78, 178);
+                tft.print("diesen Fehler zu ignorieren.");
+                break;
+        }
     } else {
-
-    }
-    
-    switch (severity) {
-        case 1:
-            tft.setCursor(86, 178);
-            tft.print("diese Info zu ignorieren.");
-            break;
-        
-        case 2:
-            tft.setCursor(78, 178);
-            tft.print("diese Warnung zu ignorieren.");
-            break;
-        
-        case 3:
-            tft.setCursor(78, 178);
-            tft.print("diesen Fehler zu ignorieren.");
-            break;
+        tft.setCursor(84, 166);
+        tft.print("Klicke den Panik Knopf um");
+        tft.setCursor(64, 178);
+        tft.print("den Panik-Modus zu deaktivieren.");
     }
 }
 
@@ -1520,6 +1552,15 @@ void handlePageBtn()
 
 void handleHomeBtn()
 {
+    if (currentlyDisplayingError == true) {
+        if (ignoringErros.indexOf(currentError) == -1) {
+            ignoringErros += String(currentError);
+        }
+
+        currentlyDisplayingError = false;
+        renderHome();
+        return;
+    }
     if (curPage == -4)
     {
         if (digitalRead(page_btn) == HIGH)
@@ -2513,14 +2554,26 @@ void checkConnector() {
         char readResponse = Serial1.read();
 
         switch (readResponse) {
+            case 'a':
+                if (ignoringErros.indexOf('b') != -1) {
+                    ignoringErros.remove(ignoringErros.indexOf('b'));
+                }
+                if (ignoringErros.indexOf('c') != -1) {
+                    ignoringErros.remove(ignoringErros.indexOf('c'));
+                }
+                if (ignoringErros.indexOf('d') != -1) {
+                    ignoringErros.remove(ignoringErros.indexOf('d'));
+                }
             case 'b':
-                
+                renderError('b', 3);
                 break;
             
             case 'c':
+                renderError('c', 3);
                 break;
             
             case 'd':
+                renderError('d', 2);
                 break;
             
             default:
@@ -2529,7 +2582,27 @@ void checkConnector() {
 
 
     } else {
-        
+        renderError('e', 2);
+    }
+
+    waiting_connector_check = false;
+    connector_check_millis = millis();
+    return;
+}
+
+void blinkError() {
+    if (errorColored == true) {
+        errorColored = false;
+        tft.drawRect(40, 36, 241, 168, LCD_BLACK);
+        tft.drawRect(41, 37, 239, 166, LCD_BLACK);
+        tft.drawRect(42, 38, 237, 164, LCD_BLACK);
+        tft.drawRect(43, 39, 235, 162, LCD_BLACK);
+    } else {
+        errorColored = true;
+        tft.drawRect(40, 36, 241, 168, errorColor);
+        tft.drawRect(41, 37, 239, 166, errorColor);
+        tft.drawRect(42, 38, 237, 164, errorColor);
+        tft.drawRect(43, 39, 235, 162, errorColor);
     }
 }
 
@@ -2551,6 +2624,10 @@ void loop()
         {
             displayStatus();
         }
+
+        if (currentlyDisplayingError == true) {
+            blinkError();
+        }
     }
     checkForBtnActive();
 
@@ -2562,7 +2639,7 @@ void loop()
         txLEDState = false;
     }
 
-    if ((millis() - connector_check_millis >= 2000 && waiting_connector_check == false) || (millis() - connector_check_millis >= 1000 && waiting_connector_check == true)) {
+    if ((millis() - connector_check_millis >= 2000 && waiting_connector_check == false) || (millis() - connector_check_millis >= 3000 && waiting_connector_check == true)) {
         checkConnector();
     }
 }
