@@ -254,14 +254,18 @@ bool waiting_connector_check = false;
 
 /*
  *  Errors:
- *  b   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)  (Severity: 3)
- *  c   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)  (Severity: 3)
- *  d   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)  (Severity: 2)
+ *  -2  =>  Globale Panik                                                       (Modul: Showcontroller) (Severity: -2)
+ *  -1  =>  Partielle Panik                                                     (Modul: Showcontroller) (Severity: -1)
+ *  1   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)      (Severity: 3)
+ *  2   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)      (Severity: 3)
+ *  3   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)      (Severity: 2)
+ *  4   =>  Connector antwortet nicht                                           (Modul: Connector)      (Severity: 2)
+ *  5   =>  Erfolgreich mit AppleMIDI-Session verbunden                         (Modul: Connector)      (Severity: 1)
  * 
 */
 
 bool currentlyDisplayingError = false;
-char currentError = '0';
+int currentError = 0;
 String ignoringErros = "";
 uint16_t errorColor = LCD_RED;
 bool errorColored = true;
@@ -1343,13 +1347,13 @@ void renderDebugPage()
     return;
 }
 
-void renderError(char error, int severity, char activator = '0') {
-    if (currentlyDisplayingError == true || ignoringErros.indexOf(error) != -1) {
+void renderMessage(int msgid, int severity, char activator = '0') {
+    if (currentlyDisplayingError == true || ignoringErros.indexOf(String(msgid)) != -1) {
         return;
     }
 
     currentlyDisplayingError = true;
-    currentError = error;
+    currentError = msgid;
     errorColored = true;
 
     switch (severity) {
@@ -1401,8 +1405,8 @@ void renderError(char error, int severity, char activator = '0') {
 
     tft.setTextSize(1);
     
-    switch (error) {
-        case '1':
+    switch (msgid) {
+        case -1:
             tft.setCursor(120, 84);
             tft.print("Typ: Partiell");
 
@@ -1415,7 +1419,7 @@ void renderError(char error, int severity, char activator = '0') {
             tft.setTextSize(1);
             break;
         
-        case '2':
+        case -2:
             tft.setCursor(128, 84);
             tft.print("Typ: Global");
 
@@ -1428,7 +1432,7 @@ void renderError(char error, int severity, char activator = '0') {
             tft.setTextSize(1);
             break;
 
-        case 'b':
+        case 1:
             tft.setCursor(114, 84);
             tft.print("Modul: Connector");
 
@@ -1439,7 +1443,7 @@ void renderError(char error, int severity, char activator = '0') {
             tft.print("hergestellt werden.");
             break;
 
-        case 'c':
+        case 2:
             tft.setCursor(114, 84);
             tft.print("Modul: Connector");
 
@@ -1450,7 +1454,7 @@ void renderError(char error, int severity, char activator = '0') {
             tft.print("fehlgeschlagen.");
             break;
 
-        case 'd':
+        case 3:
             tft.setCursor(114, 84);
             tft.print("Modul: Connector");
 
@@ -1461,12 +1465,24 @@ void renderError(char error, int severity, char activator = '0') {
             tft.print("AppleMIDI-Session verbunden.");
             break;
 
-        case 'e':
+        case 4:
             tft.setCursor(114, 84);
             tft.print("Modul: Connector");
 
             tft.setCursor(82, 120);
             tft.print("Connector antwortet nicht.");
+            break;
+        
+        case 5:
+            tft.setCursor(114, 84);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(62, 110);
+            tft.print("Erfolgreich mit AppleMIDI-Session");
+
+            tft.setCursor(132, 120);
+            tft.print("verbunden.");
+            break;
     }
 
     if (severity > 0) {
@@ -2565,15 +2581,19 @@ void checkConnector() {
                     ignoringErros.remove(ignoringErros.indexOf('d'));
                 }
             case 'b':
-                renderError('b', 3);
+                renderMessage(1, 3);
                 break;
             
             case 'c':
-                renderError('c', 3);
+                renderMessage(2, 3);
                 break;
             
             case 'd':
-                renderError('d', 2);
+                renderMessage(3, 2);
+                break;
+
+            case 'e':
+                renderMessage(5, 1);
                 break;
             
             default:
@@ -2582,7 +2602,7 @@ void checkConnector() {
 
 
     } else {
-        renderError('e', 2);
+        renderMessage(4, 2);
     }
 
     waiting_connector_check = false;
@@ -2619,14 +2639,14 @@ void loop()
     }
     if (millis() - status_led_change_millis >= 1000)
     {
-        setStatusLEDColor();
-        if (curPage == -1)
-        {
-            displayStatus();
-        }
-
         if (currentlyDisplayingError == true) {
             blinkError();
+        } else {
+            setStatusLEDColor();
+            if (curPage == -1)
+            {
+                displayStatus();
+            }
         }
     }
     checkForBtnActive();
