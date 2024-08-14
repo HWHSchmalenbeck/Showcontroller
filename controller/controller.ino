@@ -245,6 +245,24 @@ bool com_led_disable_btn_debug = false;
 bool crisis_btn_debug = false;
 bool start_btn_debug = false;
 
+// Connector Status
+
+unsigned long connector_check_millis = 0;
+bool waiting_connector_check = false;
+
+// Error handling
+
+/*
+ *  Errors:
+ *  b   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)  (Severity: 3)
+ *  c   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)  (Severity: 3)
+ *  d   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)  (Severity: 2)
+ * 
+*/
+
+bool currentlyDisplayingError = false;
+String ignoringErros = "";
+
 // Bitmaps for logo
 extern uint8_t logobody[];
 extern uint8_t logoeye[];
@@ -1322,6 +1340,130 @@ void renderDebugPage()
     return;
 }
 
+void renderError(char error, int severity) {
+    if (currentlyDisplayingError == true || ignoringErros.indexOf(error) != -1) {
+        return;
+    }
+
+    currentlyDisplayingError = true;
+
+    uint16_t errorColor = LCD_WHITE;
+
+    switch (severity) {
+        case -1:
+        case -2:
+            errorColor = LCD_PINK;
+            break;
+        case 1:
+            errorColor = LCD_BLUE;
+            break;
+        
+        case 2:
+            errorColor = LCD_YELLOW;
+            break;
+        
+        case 3:
+            errorColor = LCD_RED;
+            break;
+    }
+
+
+    tft.fillRect(40, 36, 241, 168, LCD_WHITE);
+    tft.drawRect(40, 36, 241, 168, errorColor);
+    tft.drawRect(41, 37, 239, 166, errorColor);
+    tft.drawRect(42, 38, 237, 164, errorColor);
+    tft.drawRect(43, 39, 235, 162, errorColor);
+    tft.setTextColor(LCD_BLACK);
+    tft.setTextSize(3);
+
+    switch (severity) {
+        case 3:
+            tft.setCursor(54, 50);
+            tft.print("Systemfehler");
+            break;
+        case 2:
+            tft.setCursor(100, 50);
+            tft.print("Warnung");
+            break;
+        case 1:
+            tft.setCursor(126, 50);
+            tft.print("Info");
+            break;
+        case -1:
+        case -2:
+            tft.setCursor(118, 50);
+            tft.print("Panik");
+            break;
+    }
+
+    tft.setTextSize(1);
+    
+    switch (error) {
+        case '1':
+            break;
+        
+        case '2':
+            break;
+
+        case 'b':
+            tft.setCursor(114, 84);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(66, 110);
+            tft.print("Ethernet-Verbindung konnte nicht");
+
+            tft.setCursor(104, 120);
+            tft.print("hergestellt werden.");
+            break;
+
+        case 'c':
+            tft.setCursor(114, 84);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(88, 110);
+            tft.print("DHCP-Lease-Erneuerung ist");
+
+            tft.setCursor(118, 120);
+            tft.print("fehlgeschlagen.");
+            break;
+
+        case 'd':
+            tft.setCursor(114, 84);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(74, 110);
+            tft.print("Showcontroller ist mit keiner");
+
+            tft.setCursor(78, 120);
+            tft.print("AppleMIDI-Session verbunden.");
+            break;
+    }
+
+    if (severity > 0) {
+        tft.setCursor(88, 166);
+        tft.print("Klicke die Home Taste um");
+    } else {
+
+    }
+    
+    switch (severity) {
+        case 1:
+            tft.setCursor(86, 178);
+            tft.print("diese Info zu ignorieren.");
+            break;
+        
+        case 2:
+            tft.setCursor(78, 178);
+            tft.print("diese Warnung zu ignorieren.");
+            break;
+        
+        case 3:
+            tft.setCursor(78, 178);
+            tft.print("diesen Fehler zu ignorieren.");
+            break;
+    }
+}
+
 void activatePartyMode()
 {
     for (int i = 0; i <= 3; i++)
@@ -2359,6 +2501,38 @@ void checkTime()
     Serial.println("Mins: " + minString + " Secs: " + secString);
 }
 
+void checkConnector() {
+    if (waiting_connector_check == false) {
+        waiting_connector_check = true;
+        Serial1.print('a');
+        connector_check_millis = millis();
+        return;
+    }
+
+    if (Serial1.available()) {
+        char readResponse = Serial1.read();
+
+        switch (readResponse) {
+            case 'b':
+                
+                break;
+            
+            case 'c':
+                break;
+            
+            case 'd':
+                break;
+            
+            default:
+                break;
+        }
+
+
+    } else {
+        
+    }
+}
+
 void loop()
 {
     if (showRunningMillis != 0 || (showRunningMillis == 0 && (digitZero != '0' || digitOne != '0' || digitTwo != '0' || digitThree != '0' || digitFour != '0')))
@@ -2386,5 +2560,9 @@ void loop()
         digitalWrite(rx_led, LOW);
         rxLEDState = false;
         txLEDState = false;
+    }
+
+    if ((millis() - connector_check_millis >= 2000 && waiting_connector_check == false) || (millis() - connector_check_millis >= 1000 && waiting_connector_check == true)) {
+        checkConnector();
     }
 }
