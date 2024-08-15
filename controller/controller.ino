@@ -1027,7 +1027,7 @@ void handleSelection(char act, int dir = 0)
     }
     if (dir == NULL || dir == 0)
     {
-        Serial.println("ERROR (handleSelection): NO DIR OR DIR 0");
+        sendSerialMessage("ERROR (handleSelection): NO DIR OR DIR 0");
         return;
     }
     if (curSelection == -1)
@@ -2093,7 +2093,7 @@ void communicationUtil()
     {
         if (curPort.available() && millis() - waitingForAnswerMillis >= 200)
         {
-            Serial.println("Got answer from curPort");
+            sendSerialMessage("Got answer from curPort");
 
             if (discoveryActive == true)
             {
@@ -2106,44 +2106,44 @@ void communicationUtil()
 
                 if (curPortType == 'B')
                 {
-                    Serial.println("curPort is Button");
+                    sendSerialMessage("curPort is Button");
                     curPortBId = curPort.read();
                     portids[curPortNumber] = String(curPortBId);
-                    Serial.println("curPortId is " + String(curPortBId));
+                    sendSerialMessage("curPortId is " + String(curPortBId));
                     porttype[curPortNumber] = 1;
                 }
                 else if (curPortType == 'S')
                 {
-                    Serial.println("curPort is Switch");
+                    sendSerialMessage("curPort is Switch");
                     curPortCount = curPort.read();
                     int calcNum = curPortCount - '0';
 
                     for (int i = 1; i <= calcNum; i++)
                     {
-                        Serial.println("i: " + String(i));
+                        sendSerialMessage("i: " + String(i));
                         delay(100);
                         char readId = curPort.read();
                         curPortSId = curPortSId + String(readId);
-                        Serial.println("Port read: " + String(readId));
+                        sendSerialMessage("Port read: " + String(readId));
                     }
                     portids[curPortNumber] = curPortSId;
                     porttype[curPortNumber] = 2;
                     portsize[curPortNumber] = calcNum;
 
-                    Serial.println("All IDs got: " + String(portids[curPortNumber]));
+                    sendSerialMessage("All IDs got: " + String(portids[curPortNumber]));
                 }
                 else if (curPortType == 'V')
                 {
-                    Serial.println("curPort is Vogelscheuche");
+                    sendSerialMessage("curPort is Vogelscheuche");
 
                     porttype[curPortNumber] = 3;
                 }
 
-                // Serial.println("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
+                // sendSerialMessage("Set Porttype of " + String(curPortNumber) + " to " + String(porttype[curPortNumber]));
             }
             else
             {
-                // Serial.println("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+                // sendSerialMessage("Port type of" + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
                 if (porttype[curPortNumber] == 1)
                 {
                     setComLED("rx");
@@ -2151,11 +2151,11 @@ void communicationUtil()
                     String readstatustest = String(readstatus);
                     readstatustest.toLowerCase();
 
-                    Serial.println("Got status " + String(readstatus));
+                    sendSerialMessage("Got status " + String(readstatus));
 
                     if (String(readstatus) == readstatustest)
                     {
-                        Serial.println("Read status: " + String(readstatus));
+                        sendSerialMessage("Read status: " + String(readstatus));
 
                         btnStatus[portids[curPortNumber].c_str()[0] - 'A'] = readstatus;
                     }
@@ -2174,12 +2174,12 @@ void communicationUtil()
 
                         btnStatus[readId - 'A'] = readStatus;
 
-                        Serial.println("Got ID: " + String(readId) + " Got Status: " + String(readStatus));
+                        sendSerialMessage("Got ID: " + String(readId) + " Got Status: " + String(readStatus));
                     }
                 }
                 else if (porttype[curPortNumber] == 3)
                 {
-                    Serial.println("Got answer from Vogelscheuche; ignoring");
+                    sendSerialMessage("Got answer from Vogelscheuche; ignoring");
                 }
             }
 
@@ -2188,7 +2188,7 @@ void communicationUtil()
 
         if (waitingForAnswer == true && millis() - waitingForAnswerMillis >= maxWaitingForAnswerMillis)
         {
-            Serial.println("Got no answer from curPort");
+            sendSerialMessage("Got no answer from curPort");
             if (discoveryActive == true)
             {
                 porttype[curPortNumber] = 0;
@@ -2203,7 +2203,7 @@ void communicationUtil()
                 {
                     for (int i = 0; i < portsize[curPortNumber]; i++)
                     {
-                        Serial.println("Cur port to change: " + portids[curPortNumber]);
+                        sendSerialMessage("Cur port to change: " + portids[curPortNumber]);
                         btnStatus[portids[curPortNumber].charAt(i) - 'A'] = 'n';
                     }
                 }
@@ -2218,7 +2218,7 @@ void communicationUtil()
         delay(10);
         curPortNumber += 1;
 
-        // Serial.println("Port type of " + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
+        // sendSerialMessage("Port type of " + String(curPortNumber) + " is " + String(porttype[curPortNumber]));
         if (discoveryActive == false && (porttype[curPortNumber] == 0 || porttype[curPortNumber] == 3))
         {
             return;
@@ -2263,7 +2263,7 @@ void communicationUtil()
             return;
         }
 
-        Serial.println("curPortNumber is " + String(curPortNumber));
+        sendSerialMessage("curPortNumber is " + String(curPortNumber));
 
         curPort.begin(9600);
         if (discoveryActive == true)
@@ -2669,7 +2669,7 @@ void checkTime()
         showRunningMillis = 0;
     }
 
-    Serial.println("Mins: " + minString + " Secs: " + secString);
+    sendSerialMessage("Mins: " + minString + " Secs: " + secString);
 }
 
 void checkConnector() {
