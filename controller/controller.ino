@@ -1,6 +1,7 @@
 #include <SoftwareSerial.h>
 #include <Elegoo_GFX.h>
 #include <Elegoo_TFTLCD.h>
+#include "predefines.h"
 
 /*
  *
@@ -270,6 +271,11 @@ String ignoringErros = "";
 uint16_t errorColor = LCD_RED;
 bool errorColored = true;
 
+// Debug interface handling
+
+bool sendDebugMessages = false;
+int curDebugInterfacePage = 1;
+
 // Bitmaps for logo
 extern uint8_t logobody[];
 extern uint8_t logoeye[];
@@ -374,6 +380,110 @@ void setup()
 
     digitalWrite(start_green, HIGH);
     digitalWrite(crisis_red, HIGH);
+}
+
+void sendSerialMessage(String msg) {
+    if (sendDebugMessages == false) {
+        return;
+    }
+
+    Serial.println(msg);
+    return;
+}
+
+void sendDebugInterfacePage() {
+    switch (curDebugInterfacePage) {
+        case 1:
+            Serial.println("HWHS Showcontroller Debug Interface\n");
+            Serial.println("Mache eine Auswahl:\n");
+
+            Serial.println("1: Test Error Messages");
+
+            if (sendDebugMessages == false) {
+                Serial.println("\nD: Enable Debug Messages");
+            } else {
+                Serial.println("\nD: Disable Debug Messages");
+            }
+            break;
+
+        case 2:
+            Serial.println("HWHS Showcontroller Debug Interface");
+            Serial.println("Test Error Messages\n");
+            Serial.println("Mache eine Auswahl:\n");
+
+            Serial.println("1: Ethernet-Verbindung konnte nicht hergestellt werden. [Connector] (ID: 1)");
+            Serial.println("2: DHCP-Lease-Erneuerung ist fehlgeschlagen. [Connector] (ID: 2)");
+            Serial.println("3: Showcontroller ist mit keiner AppleMIDI-Session verbunden. [Connector] (ID: 3)");
+            Serial.println("4: Connector antwortet nicht. [Connector] (ID: 4)");
+            Serial.println("5: Erfolgreich mit AppleMIDI-Session verbunden. [Connector] (ID: 5)");
+
+            Serial.println("\n!: Partieller Panik-Modus");
+            Serial.println("?: Globaler Panik-Modus");
+
+            Serial.println("\nCurrently ignored: " + ignoringErros);
+
+            Serial.println("\nC: Clear ignored list");
+            Serial.println("M: Back to Main Menu");
+            break;
+    }
+}
+
+void handleDebugInterfaceInputs(char input) {
+    if (curDebugInterfacePage == 1) {
+        switch (input) {
+            case '1':
+                curDebugInterfacePage = 2;
+                break;
+            
+            case 'D':
+                if (sendDebugMessages == false) {
+                    sendDebugMessages = true;
+                    Serial.println("Enabled Debug Messages. To disable send 'D' again.");
+                } else {
+                    sendDebugMessages = false;
+                }
+                break;
+        }
+    } else if (curDebugInterfacePage == 2) {
+        switch (input) {
+            case '1':
+                renderMessage(1, 3);
+                break;
+            
+            case '2':
+                renderMessage(2, 3);
+                break;
+            
+            case '3':
+                renderMessage(3, 2);
+                break;
+            
+            case '4':
+                renderMessage(4, 2);
+                break;
+            
+            case '5':
+                renderMessage(5, 1);
+                break;
+
+            case '!':
+                renderMessage(-1, -1, '1');
+                break;
+
+            case '?':
+                renderMessage(-2, -2, '1');
+                break;
+            
+            case 'C':
+                ignoringErros = "";
+                break;
+            
+            case 'M':
+                curDebugInterfacePage = 1;
+                break;
+        }
+    }
+    sendDebugInterfacePage();
 }
 
 void display_startup()
@@ -1568,13 +1678,15 @@ void handlePageBtn()
 
 void handleHomeBtn()
 {
-    if (currentlyDisplayingError == true) {
+    if (currentlyDisplayingError == true && currentError > 0) {
         if (ignoringErros.indexOf(currentError) == -1) {
             ignoringErros += String(currentError);
         }
 
         currentlyDisplayingError = false;
         renderHome();
+        return;
+    } else if (currentlyDisplayingError == true && currentError < 0) {
         return;
     }
     if (curPage == -4)
@@ -1761,6 +1873,8 @@ void handleCrisisBtn()
     if (controllerStatus == 'c')
     {
         resetStatus();
+        currentlyDisplayingError = false;
+        renderHome();
     }
     else
     {
@@ -2628,6 +2742,10 @@ void blinkError() {
 
 void loop()
 {
+    if (Serial.available()) {
+        char readInst = Serial.read();
+        handleDebugInterfaceInputs(readInst);
+    }
     if (showRunningMillis != 0 || (showRunningMillis == 0 && (digitZero != '0' || digitOne != '0' || digitTwo != '0' || digitThree != '0' || digitFour != '0')))
     {
         checkTime();
