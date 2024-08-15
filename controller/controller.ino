@@ -392,10 +392,12 @@ void sendSerialMessage(String msg) {
 }
 
 void sendDebugInterfacePage() {
+    Serial.println("\n\n\n\n\n\n\n\n");
     switch (curDebugInterfacePage) {
         case 1:
             Serial.println("HWHS Showcontroller Debug Interface\n");
-            Serial.println("Mache eine Auswahl:\n");
+            Serial.println("Main Menu\n\n");
+            Serial.println("Make a choice:\n");
 
             Serial.println("1: Test Error Messages");
 
@@ -407,9 +409,9 @@ void sendDebugInterfacePage() {
             break;
 
         case 2:
-            Serial.println("HWHS Showcontroller Debug Interface");
-            Serial.println("Test Error Messages\n");
-            Serial.println("Mache eine Auswahl:\n");
+            Serial.println("HWHS Showcontroller Debug Interface\n");
+            Serial.println("Test Error Messages\n\n");
+            Serial.println("Make a choice:\n");
 
             Serial.println("1: Ethernet-Verbindung konnte nicht hergestellt werden. [Connector] (ID: 1)");
             Serial.println("2: DHCP-Lease-Erneuerung ist fehlgeschlagen. [Connector] (ID: 2)");
@@ -424,6 +426,25 @@ void sendDebugInterfacePage() {
 
             Serial.println("\nC: Clear ignored list");
             Serial.println("M: Back to Main Menu");
+            break;
+        
+        case 3:
+            Serial.println("HWHS Showcontroller Debug Interface\n");
+            Serial.println("Test Screens\n\n");
+            Serial.println("Make a choice:\n");
+
+            Serial.println("h: Home (Page ID: -1)");
+            Serial.println("s: Settings (Page ID: -2)");
+            Serial.println("c: Credits (Page ID: -3)");
+            Serial.println("d: Debug (Page ID: -4)");
+            Serial.println("0: Area Page 1 (Page ID: 0)");
+            Serial.println("1: Area Page 2 (Page ID: 1)");
+            Serial.println("2: Area Page 3 (Page ID: 2)");
+            Serial.println("3: Area Page 4 (Page ID: 3)");
+            Serial.println("4: Area Page 5 (Page ID: 4)");
+            Serial.println("5: Area Page 6 (Page ID: 5)");
+
+            Serial.println("\nM: Back to Main Menu");
             break;
     }
 }
@@ -476,6 +497,52 @@ void handleDebugInterfaceInputs(char input) {
             
             case 'C':
                 ignoringErrors = "";
+                break;
+            
+            case 'M':
+                curDebugInterfacePage = 1;
+                break;
+        }
+    } else if (curDebugInterfacePage == 3) {
+        switch (input) {
+            case 'h':
+                renderHome();
+                break;
+            
+            case 's':
+                renderSettingsPage();
+                break;
+            
+            case 'c':
+                renderCreditsPage();
+                break;
+            
+            case 'd':
+                renderDebugPage();
+                break;
+            
+            case '0':
+                renderButtonPage(0);
+                break;
+            
+            case '1':
+                renderButtonPage(1);
+                break;
+            
+            case '2':
+                renderButtonPage(2);
+                break;
+            
+            case '3':
+                renderButtonPage(3);
+                break;
+            
+            case '4':
+                renderButtonPage(4);
+                break;
+            
+            case '5':
+                renderButtonPage(5);
                 break;
             
             case 'M':
@@ -923,11 +990,9 @@ void handleSelection(char act, int dir = 0)
             switch (curSelection)
             {
             case 1:
-                curPage = -3;
                 renderCreditsPage();
                 return;
             case 2:
-                curPage = -4;
                 renderDebugPage();
                 return;
             case 3:
@@ -985,7 +1050,6 @@ void handleSelection(char act, int dir = 0)
             {
                 return;
             }
-            curPage = curSelection - 1;
             renderButtonPage(curSelection - 1);
             return;
         }
@@ -1275,6 +1339,7 @@ void renderButtonPage(int number)
 
 void renderSettingsPage()
 {
+    curPage = -2;
     handleSelection('c');
     tft.fillScreen(LCD_WHITE);
     tft.setCursor(90, 20);
@@ -1305,6 +1370,7 @@ void renderSettingsPage()
 
 void renderCreditsPage()
 {
+    curPage = -3;
     handleSelection('c');
     tft.fillScreen(LCD_WHITE);
     tft.drawBitmap(5, 5, otto_small, 51, 50, LCD_BLACK);
@@ -1365,6 +1431,7 @@ void renderCreditsPage()
 
 void renderDebugPage()
 {
+    curPage = -4;
     handleSelection('c');
 
     page_btn_debug = false;
@@ -1667,7 +1734,6 @@ void handlePageBtn()
     }
     if (curPage < -1 || curPage == 5)
     {
-        curPage = -1;
         renderHome();
         return;
     }
@@ -1705,11 +1771,9 @@ void handleHomeBtn()
     }
     if (curPage == -1)
     {
-        curPage = -2;
         renderSettingsPage();
         return;
     }
-    curPage = -1;
     renderHome();
     return;
 }
@@ -1725,7 +1789,6 @@ void handleNavRightBtn()
             digitalWrite(crisis_red, HIGH);
             rxLEDState = false;
             txLEDState = false;
-            curPage = -1;
             renderHome();
             return;
         }
