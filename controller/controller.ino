@@ -400,6 +400,7 @@ void sendDebugInterfacePage() {
             Serial.println("Make a choice:\n");
 
             Serial.println("1: Test Error Messages");
+            Serial.println("2: Test Screens");
 
             if (sendDebugMessages == false) {
                 Serial.println("\nD: Enable Debug Messages");
@@ -454,6 +455,10 @@ void handleDebugInterfaceInputs(char input) {
         switch (input) {
             case '1':
                 curDebugInterfacePage = 2;
+                break;
+            
+            case '2':
+                curDebugInterfacePage = 3;
                 break;
             
             case 'D':
