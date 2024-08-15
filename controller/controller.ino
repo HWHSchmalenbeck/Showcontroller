@@ -1589,107 +1589,121 @@ void renderMessage(int msgid, int severity, char activator = '0') {
     
     switch (msgid) {
         case -1:
-            tft.setCursor(120, 84);
+            tft.setCursor(120, 80);
             tft.print("Typ: Partiell");
 
             tft.setTextSize(2);
-            tft.setCursor(78, 110);
+            tft.setCursor(78, 100);
             tft.print("Aktiviert von:");
 
-            tft.setCursor(126, 130);
+            tft.setCursor(126, 120);
             tft.print("Area " + String(activator));
             tft.setTextSize(1);
             break;
         
         case -2:
-            tft.setCursor(128, 84);
+            tft.setCursor(128, 80);
             tft.print("Typ: Global");
 
             tft.setTextSize(2);
-            tft.setCursor(78, 110);
+            tft.setCursor(78, 100);
             tft.print("Aktiviert von:");
 
-            tft.setCursor(126, 130);
+            tft.setCursor(126, 120);
             tft.print("Area " + String(activator));
             tft.setTextSize(1);
             break;
 
         case 1:
-            tft.setCursor(114, 84);
+            tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
-            tft.setCursor(66, 110);
+            tft.setCursor(66, 100);
             tft.print("Ethernet-Verbindung konnte nicht");
 
-            tft.setCursor(104, 120);
+            tft.setCursor(104, 110);
             tft.print("hergestellt werden.");
             break;
 
         case 2:
-            tft.setCursor(114, 84);
+            tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
-            tft.setCursor(88, 110);
+            tft.setCursor(88, 100);
             tft.print("DHCP-Lease-Erneuerung ist");
 
-            tft.setCursor(118, 120);
+            tft.setCursor(118, 110);
             tft.print("fehlgeschlagen.");
             break;
 
         case 3:
-            tft.setCursor(114, 84);
+            tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
-            tft.setCursor(74, 110);
+            tft.setCursor(74, 100);
             tft.print("Showcontroller ist mit keiner");
 
-            tft.setCursor(78, 120);
+            tft.setCursor(78, 110);
             tft.print("AppleMIDI-Session verbunden.");
             break;
 
         case 4:
-            tft.setCursor(114, 84);
+            tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
-            tft.setCursor(82, 120);
+            tft.setCursor(82, 110);
             tft.print("Connector antwortet nicht.");
             break;
         
         case 5:
-            tft.setCursor(114, 84);
+            tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
-            tft.setCursor(62, 110);
+            tft.setCursor(62, 100);
             tft.print("Erfolgreich mit AppleMIDI-Session");
 
-            tft.setCursor(132, 120);
+            tft.setCursor(132, 110);
             tft.print("verbunden.");
             break;
     }
 
+    if (severity == 3) {
+        tft.setTextSize(2);
+        tft.setTextColor(LCD_RED);
+
+        tft.setCursor(114, 130);
+        tft.print("Neustart");
+
+        tft.setCursor(84, 150);
+        tft.print("erforderlich!");
+
+        tft.setTextSize(1);
+        tft.setTextColor(LCD_BLACK);
+    }
+
     if (severity > 0) {
-        tft.setCursor(88, 166);
+        tft.setCursor(88, 174);
         tft.print("Klicke die Home Taste um");
         switch (severity) {
             case 1:
-                tft.setCursor(86, 178);
+                tft.setCursor(86, 186);
                 tft.print("diese Info zu ignorieren.");
                 break;
         
             case 2:
-                tft.setCursor(78, 178);
+                tft.setCursor(78, 186);
                 tft.print("diese Warnung zu ignorieren.");
                 break;
         
             case 3:
-                tft.setCursor(78, 178);
+                tft.setCursor(78, 186);
                 tft.print("diesen Fehler zu ignorieren.");
                 break;
         }
     } else {
-        tft.setCursor(84, 166);
+        tft.setCursor(84, 174);
         tft.print("Klicke den Panik Knopf um");
-        tft.setCursor(64, 178);
+        tft.setCursor(64, 186);
         tft.print("den Panik-Modus zu deaktivieren.");
     }
 }
@@ -2799,12 +2813,34 @@ void blinkError() {
         tft.drawRect(41, 37, 239, 166, LCD_BLACK);
         tft.drawRect(42, 38, 237, 164, LCD_BLACK);
         tft.drawRect(43, 39, 235, 162, LCD_BLACK);
+
+        if (errorColor == LCD_RED) {
+            tft.setTextSize(2);
+            tft.setTextColor(LCD_BLACK);
+
+            tft.setCursor(114, 130);
+            tft.print("Neustart");
+
+            tft.setCursor(84, 150);
+            tft.print("erforderlich!");
+        }
     } else {
         errorColored = true;
         tft.drawRect(40, 36, 241, 168, errorColor);
         tft.drawRect(41, 37, 239, 166, errorColor);
         tft.drawRect(42, 38, 237, 164, errorColor);
         tft.drawRect(43, 39, 235, 162, errorColor);
+
+        if (errorColor == LCD_RED) {
+            tft.setTextSize(2);
+            tft.setTextColor(LCD_RED);
+
+            tft.setCursor(114, 130);
+            tft.print("Neustart");
+
+            tft.setCursor(84, 150);
+            tft.print("erforderlich!");
+        }
     }
 }
 
