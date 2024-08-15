@@ -267,7 +267,7 @@ bool waiting_connector_check = false;
 
 bool currentlyDisplayingError = false;
 int currentError = 0;
-String ignoringErros = "";
+String ignoringErrors = "";
 uint16_t errorColor = LCD_RED;
 bool errorColored = true;
 
@@ -420,7 +420,7 @@ void sendDebugInterfacePage() {
             Serial.println("\n!: Partieller Panik-Modus");
             Serial.println("?: Globaler Panik-Modus");
 
-            Serial.println("\nCurrently ignored: " + ignoringErros);
+            Serial.println("\nCurrently ignored: " + ignoringErrors);
 
             Serial.println("\nC: Clear ignored list");
             Serial.println("M: Back to Main Menu");
@@ -475,7 +475,7 @@ void handleDebugInterfaceInputs(char input) {
                 break;
             
             case 'C':
-                ignoringErros = "";
+                ignoringErrors = "";
                 break;
             
             case 'M':
@@ -1458,7 +1458,7 @@ void renderDebugPage()
 }
 
 void renderMessage(int msgid, int severity, char activator = '0') {
-    if (currentlyDisplayingError == true || ignoringErros.indexOf(String(msgid)) != -1) {
+    if (currentlyDisplayingError == true || ignoringErrors.indexOf(String(msgid)) != -1) {
         return;
     }
 
@@ -1679,8 +1679,8 @@ void handlePageBtn()
 void handleHomeBtn()
 {
     if (currentlyDisplayingError == true && currentError > 0) {
-        if (ignoringErros.indexOf(currentError) == -1) {
-            ignoringErros += String(currentError);
+        if (ignoringErrors.indexOf(currentError) == -1) {
+            ignoringErrors += String(currentError);
         }
 
         currentlyDisplayingError = false;
@@ -2685,14 +2685,14 @@ void checkConnector() {
 
         switch (readResponse) {
             case 'a':
-                if (ignoringErros.indexOf('b') != -1) {
-                    ignoringErros.remove(ignoringErros.indexOf('b'));
+                if (ignoringErrors.indexOf('b') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('b'));
                 }
-                if (ignoringErros.indexOf('c') != -1) {
-                    ignoringErros.remove(ignoringErros.indexOf('c'));
+                if (ignoringErrors.indexOf('c') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('c'));
                 }
-                if (ignoringErros.indexOf('d') != -1) {
-                    ignoringErros.remove(ignoringErros.indexOf('d'));
+                if (ignoringErrors.indexOf('d') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('d'));
                 }
             case 'b':
                 renderMessage(1, 3);
