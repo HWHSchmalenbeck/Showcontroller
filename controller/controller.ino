@@ -70,6 +70,7 @@ int curSelection = -1;
  *  -2   ->  Settings
  *  -3   ->  Credits
  *  -4   ->  Debug
+ *  -5   ->  Show Types
  *  -100 ->  Startup screen
  *
  */
@@ -250,26 +251,32 @@ bool start_btn_debug = false;
 
 unsigned long connector_check_millis = 0;
 bool waiting_connector_check = false;
+bool connector_check_missed = false;
 
 // Error handling
 
 /*
  *  Errors:
- *  -2  =>  Globale Panik                                                       (Modul: Showcontroller) (Severity: -2)
- *  -1  =>  Partielle Panik                                                     (Modul: Showcontroller) (Severity: -1)
- *  1   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)      (Severity: 3)
- *  2   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)      (Severity: 3)
- *  3   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)      (Severity: 2)
- *  4   =>  Connector antwortet nicht                                           (Modul: Connector)      (Severity: 2)
- *  5   =>  Erfolgreich mit AppleMIDI-Session verbunden                         (Modul: Connector)      (Severity: 1)
+ *  ?   =>  Globale Panik                                                       (Modul: Showcontroller) (Severity: -2)
+ *  !  =>  Partielle Panik                                                     (Modul: Showcontroller) (Severity: -1)
+ *  a   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)      (Severity: 3)
+ *  b   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)      (Severity: 3)
+ *  c   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)      (Severity: 2)
+ *  d   =>  Connector antwortet nicht                                           (Modul: Connector)      (Severity: 2)
+ *  e   =>  Erfolgreich mit AppleMIDI-Session verbunden                         (Modul: Connector)      (Severity: 1)
+ *  f   =>  Connector antwortet wieder                                          (Modul: Connector)      (Severity: 1)
  * 
 */
 
 bool currentlyDisplayingError = false;
-int currentError = 0;
+char currentError = 0;
 String ignoringErrors = "";
 uint16_t errorColor = LCD_RED;
 bool errorColored = true;
+
+// Show types
+
+bool showTypes[6] = {true, true, true, true, true, true};
 
 // Debug interface handling
 
@@ -300,6 +307,8 @@ String oldStatusText = "";
 // Values for show
 
 bool witchEmpty = false;
+bool showTypes[2] = {true, true};
+int curShowType = 0;
 
 // Misc values
 bool discoveryActive = false;
@@ -320,8 +329,9 @@ void setup()
 
     // Begin Serial
     Serial.begin(9600);
+    sendDebugInterfacePage();
 
-    Serial1.begin(9600);
+    Serial2.begin(9600);
 
     /*serialPortOne.begin(9600);
     serialPortTwo.begin(9600);
@@ -419,6 +429,7 @@ void sendDebugInterfacePage() {
             Serial.println("3: Showcontroller ist mit keiner AppleMIDI-Session verbunden. [Connector] (ID: 3)");
             Serial.println("4: Connector antwortet nicht. [Connector] (ID: 4)");
             Serial.println("5: Erfolgreich mit AppleMIDI-Session verbunden. [Connector] (ID: 5)");
+            Serial.println("6: Connector antwortet wieder. [Connector] (ID: 6)");
 
             Serial.println("\n!: Partieller Panik-Modus");
             Serial.println("?: Globaler Panik-Modus");
@@ -438,6 +449,7 @@ void sendDebugInterfacePage() {
             Serial.println("s: Settings (Page ID: -2)");
             Serial.println("c: Credits (Page ID: -3)");
             Serial.println("d: Debug (Page ID: -4)");
+            Serial.println("t: Settings Show Types (Page ID: -5)");
             Serial.println("0: Area Page 1 (Page ID: 0)");
             Serial.println("1: Area Page 2 (Page ID: 1)");
             Serial.println("2: Area Page 3 (Page ID: 2)");
@@ -473,31 +485,35 @@ void handleDebugInterfaceInputs(char input) {
     } else if (curDebugInterfacePage == 2) {
         switch (input) {
             case '1':
-                renderMessage(1, 3);
+                renderMessage('a', 3);
                 break;
             
             case '2':
-                renderMessage(2, 3);
+                renderMessage('b', 3);
                 break;
             
             case '3':
-                renderMessage(3, 2);
+                renderMessage('c', 2);
                 break;
             
             case '4':
-                renderMessage(4, 2);
+                renderMessage('d', 2);
                 break;
             
             case '5':
-                renderMessage(5, 1);
+                renderMessage('e', 1);
+                break;
+            
+            case '6':
+                renderMessage('f', 1);
                 break;
 
             case '!':
-                renderMessage(-1, -1, '1');
+                renderMessage('!', -1, '1');
                 break;
 
             case '?':
-                renderMessage(-2, -2, '1');
+                renderMessage('?', -2, '1');
                 break;
             
             case 'C':
@@ -524,6 +540,10 @@ void handleDebugInterfaceInputs(char input) {
             
             case 'd':
                 renderDebugPage();
+                break;
+            
+            case 't':
+                renderSettingsShowTypes();
                 break;
             
             case '0':
@@ -700,7 +720,26 @@ void startShow()
             }
         }
     }
-    Serial1.print('s');
+
+    curShowType++;
+
+    if (curShowType > sizeof(showTypes)-1) {
+        curShowType = 0;
+    }
+
+    while (showTypes[curShowType] == false) {
+        sendSerialMessage(String(curShowType) + ":" + String(showTypes[curShowType]));
+        curShowType++;
+
+        if (curShowType > sizeof(showTypes)-1) {
+            curShowType = 0;
+        }
+    }
+
+    sendSerialMessage("Chosen:" + String(curShowType) + ":" + String(showTypes[curShowType]));
+
+    Serial2.print('s');
+    Serial2.print(String(curShowType));
     return;
 }
 
@@ -767,6 +806,30 @@ void renderSelection(int id, bool negative = false)
         case 4:
             tft.drawRect(109, 209, 102, 22, selectionColor);
             return;
+        }
+    }
+    else if (curPage == -5) 
+    {
+        switch (id)
+        {
+            case 1:
+                tft.drawRect(16, 66, 144, 38, selectionColor);
+                return;
+            case 2:
+                tft.drawRect(166, 66, 144, 38, selectionColor);
+                return;
+            case 3:
+                tft.drawRect(16, 116, 144, 38, selectionColor);
+                return;
+            case 4:
+                tft.drawRect(166, 116, 144, 38, selectionColor);
+                return;
+            case 5:
+                tft.drawRect(16, 166, 144, 38, selectionColor);
+                return;
+            case 6:
+                tft.drawRect(166, 166, 144, 38, selectionColor);
+                return;
         }
     }
     else if (curPage == -1)
@@ -861,7 +924,7 @@ void resetStatus()
     lastCrisisDisable = millis();
     lastBtnSentAction = millis();
     timeSinceReset = millis();
-    Serial1.print('r');
+    Serial2.print('r');
     return;
 }
 
@@ -869,7 +932,7 @@ void enableCrisis()
 {
     if (controllerStatus != 'c')
     {
-        Serial1.print('p');
+        Serial2.print('p');
         showRunningMillis = 0;
         for (int i = 0; i <= 3; i++)
         {
@@ -1049,6 +1112,22 @@ void handleSelection(char act, int dir = 0)
                 return;
             }
         }
+        else if (curPage == -5)
+        {
+            if (curSelection < 1)
+            {
+                return;
+            }
+
+            if (showTypes[curSelection-1] == true) {
+                showTypes[curSelection-1] = false;
+            } else {
+                showTypes[curSelection-1] = true;
+            }
+
+            renderSettingsShowTypes();
+            return;
+        }
         else if (curPage == -1)
         {
             if (curSelection == -1)
@@ -1114,7 +1193,7 @@ void handleSelection(char act, int dir = 0)
     {
         maxSelection = settingsPageSelectMax;
     }
-    else if (curPage == -1)
+    else if (curPage == -1 || curPage == -5)
     {
         maxSelection = homePageSelectMax;
     }
@@ -1283,12 +1362,15 @@ void renderHome()
     displayStatus();
 
     // Show Run Duration
-    displayClock(1, '0');
-    displayClock(2, '0');
     tft.setCursor(262, 210);
     tft.print(":");
-    displayClock(3, '0');
-    displayClock(4, '0');
+
+    digitZero = 'a';
+    digitOne = 'a';
+    digitTwo = 'a';
+    digitThree = 'a';
+    digitFour = 'a';
+    checkTime();
 
     return;
 }
@@ -1370,6 +1452,109 @@ void renderSettingsPage()
     tft.setTextSize(1);
     tft.setCursor(125, 217);
     tft.print("Reset Status");
+    return;
+}
+
+void renderSettingsShowTypes() {
+    curPage = -5;
+    handleSelection('c');
+
+    tft.setTextSize(3);
+    tft.setTextColor(LCD_BLACK);
+    tft.setCursor(70, 20);
+    tft.print("Show Types");
+
+    tft.setTextSize(2);
+
+    // Basic
+    tft.drawRect(20, 70, 30, 30, LCD_BLACK);
+    tft.drawRect(21, 71, 28, 28, LCD_BLACK);
+    tft.setCursor(60, 78);
+    tft.print("Show 1");
+
+    // Chosen
+    if (showTypes[0] == true) {
+        tft.fillRect(24, 74, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(16, 66, 144, 38, LCD_RED);
+
+
+    // Basic
+    tft.drawRect(170, 70, 30, 30, LCD_BLACK);
+    tft.drawRect(171, 71, 28, 28, LCD_BLACK);
+    tft.setCursor(210, 78);
+    tft.print("Show 2");
+
+    // Chosen
+    if (showTypes[1] == true) {
+        tft.fillRect(174, 74, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(166, 66, 144, 38, LCD_RED);
+
+
+    // Basic
+    tft.drawRect(20, 120, 30, 30, LCD_BLACK);
+    tft.drawRect(21, 121, 28, 28, LCD_BLACK);
+    tft.setCursor(60, 128);
+    tft.print("Show 3");
+
+    // Chosen
+    if (showTypes[2] == true) {
+        tft.fillRect(24, 124, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(16, 116, 144, 38, LCD_RED);
+
+
+    // Basic
+    tft.drawRect(170, 120, 30, 30, LCD_BLACK);
+    tft.drawRect(171, 121, 28, 28, LCD_BLACK);
+    tft.setCursor(210, 128);
+    tft.print("Show 4");
+
+    // Chosen
+    if (showTypes[3] == true) {
+        tft.fillRect(174, 124, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(166, 116, 144, 38, LCD_RED);
+
+
+    // Basic
+    tft.drawRect(20, 170, 30, 30, LCD_BLACK);
+    tft.drawRect(21, 171, 28, 28, LCD_BLACK);
+    tft.setCursor(60, 178);
+    tft.print("Show 5");
+
+    // Chosen
+    if (showTypes[4] == true) {
+        tft.fillRect(24, 174, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(16, 166, 144, 38, LCD_RED);
+
+
+    // Basic
+    tft.drawRect(170, 170, 30, 30, LCD_BLACK);
+    tft.drawRect(171, 171, 28, 28, LCD_BLACK);
+    tft.setCursor(210, 178);
+    tft.print("Show 6");
+
+    // Chosen
+    if (showTypes[5] == true) {
+        tft.fillRect(174, 174, 22, 22, LCD_BLACK);
+    }
+
+    // Selection
+    tft.drawRect(166, 166, 144, 38, LCD_RED);
+
     return;
 }
 
@@ -1529,9 +1714,9 @@ void renderDebugPage()
     return;
 }
 
-void renderMessage(int msgid, int severity, char activator = '0') {
+bool renderMessage(char msgid, int severity, char activator = '0') {
     if (currentlyDisplayingError == true || ignoringErrors.indexOf(String(msgid)) != -1) {
-        return;
+        return false;
     }
 
     currentlyDisplayingError = true;
@@ -1588,7 +1773,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
     tft.setTextSize(1);
     
     switch (msgid) {
-        case -1:
+        case '!':
             tft.setCursor(120, 80);
             tft.print("Typ: Partiell");
 
@@ -1601,7 +1786,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.setTextSize(1);
             break;
         
-        case -2:
+        case '?':
             tft.setCursor(128, 80);
             tft.print("Typ: Global");
 
@@ -1614,7 +1799,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.setTextSize(1);
             break;
 
-        case 1:
+        case 'a':
             tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
@@ -1625,7 +1810,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.print("hergestellt werden.");
             break;
 
-        case 2:
+        case 'b':
             tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
@@ -1636,7 +1821,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.print("fehlgeschlagen.");
             break;
 
-        case 3:
+        case 'c':
             tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
@@ -1647,7 +1832,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.print("AppleMIDI-Session verbunden.");
             break;
 
-        case 4:
+        case 'd':
             tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
@@ -1655,7 +1840,7 @@ void renderMessage(int msgid, int severity, char activator = '0') {
             tft.print("Connector antwortet nicht.");
             break;
         
-        case 5:
+        case 'e':
             tft.setCursor(114, 80);
             tft.print("Modul: Connector");
 
@@ -1664,6 +1849,14 @@ void renderMessage(int msgid, int severity, char activator = '0') {
 
             tft.setCursor(132, 110);
             tft.print("verbunden.");
+            break;
+        
+        case 'f':
+            tft.setCursor(114, 80);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(80, 110);
+            tft.print("Connector antwortet wieder.");
             break;
     }
 
@@ -1706,6 +1899,8 @@ void renderMessage(int msgid, int severity, char activator = '0') {
         tft.setCursor(64, 186);
         tft.print("den Panik-Modus zu deaktivieren.");
     }
+
+    return true;
 }
 
 void activatePartyMode()
@@ -1961,6 +2156,9 @@ void handleCrisisBtn()
     else
     {
         enableCrisis();
+
+        currentlyDisplayingError = false;
+        renderMessage('?', -2);
     }
 }
 
@@ -2746,50 +2944,59 @@ void checkTime()
     if (minString == "30" && sent_stop_playing == false) {
         sent_stop_playing = true;
 
-        Serial1.print('r');
+        Serial2.print('r');
         controllerStatus = 'a';
         showRunningMillis = 0;
     }
 
-    sendSerialMessage("Mins: " + minString + " Secs: " + secString);
+    //sendSerialMessage("Mins: " + minString + " Secs: " + secString);
 }
 
 void checkConnector() {
     if (waiting_connector_check == false) {
         waiting_connector_check = true;
-        Serial1.print('a');
+        Serial2.print('a');
         connector_check_millis = millis();
         return;
     }
 
-    if (Serial1.available()) {
-        char readResponse = Serial1.read();
+    if (Serial2.available()) {
+        char readResponse = Serial2.read();
+
+        sendSerialMessage("Connector answer: " + String(readResponse));
+
+        if (connector_check_missed == true) {
+            renderMessage('f', 1);
+            connector_check_missed = false;
+        }
 
         switch (readResponse) {
             case 'a':
+                if (ignoringErrors.indexOf('a') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('a'));
+                }
                 if (ignoringErrors.indexOf('b') != -1) {
                     ignoringErrors.remove(ignoringErrors.indexOf('b'));
                 }
                 if (ignoringErrors.indexOf('c') != -1) {
-                    ignoringErrors.remove(ignoringErrors.indexOf('c'));
+                    if (renderMessage('e', 1) == true) {
+                        ignoringErrors.remove(ignoringErrors.indexOf('c'));
+                    }
                 }
-                if (ignoringErrors.indexOf('d') != -1) {
-                    ignoringErrors.remove(ignoringErrors.indexOf('d'));
-                }
+                break;
             case 'b':
-                renderMessage(1, 3);
+                renderMessage('a', 3);
                 break;
             
             case 'c':
-                renderMessage(2, 3);
+                renderMessage('b', 3);
                 break;
             
             case 'd':
-                renderMessage(3, 2);
-                break;
-
-            case 'e':
-                renderMessage(5, 1);
+                renderMessage('c', 2);
+                if (ignoringErrors.indexOf('e') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('e'));
+                }
                 break;
             
             default:
@@ -2798,7 +3005,8 @@ void checkConnector() {
 
 
     } else {
-        renderMessage(4, 2);
+        renderMessage('d', 2);
+        connector_check_missed = true;
     }
 
     waiting_connector_check = false;
@@ -2842,6 +3050,8 @@ void blinkError() {
             tft.print("erforderlich!");
         }
     }
+
+    status_led_change_millis = millis();
 }
 
 void loop()
@@ -2882,6 +3092,8 @@ void loop()
     }
 
     if ((millis() - connector_check_millis >= 2000 && waiting_connector_check == false) || (millis() - connector_check_millis >= 3000 && waiting_connector_check == true)) {
-        checkConnector();
+        if (curPage != -100) {
+            checkConnector();
+        }
     }
 }

@@ -6,6 +6,16 @@
 int plug1 = 5;
 int plug2 = 6;
 
+int beeper = 8;
+
+int statusLed = 9;
+int currentBrightness = 255;
+int dir = 1;
+
+int numBlink = 0;
+
+unsigned long statusLedMillis = 0;
+
 String ignoring = "";
 
 byte mac[] = {
@@ -18,12 +28,14 @@ int ethernetStatus = NULL;
 
 unsigned long maintainMillis = 0;
 
+int status = 0;
+
 APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
 
-SoftwareSerial comport(11,10);
+SoftwareSerial comport(3, 2);
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     digitalWrite(plug1, HIGH);
     digitalWrite(plug2, HIGH);
     comport.begin(9600);
@@ -31,6 +43,8 @@ void setup() {
 
     pinMode(plug1, OUTPUT);
     pinMode(plug2, OUTPUT);
+    pinMode(statusLed, OUTPUT);
+    pinMode(beeper, OUTPUT);
 
     ethernetStatus = Ethernet.begin(mac);
 
@@ -57,23 +71,39 @@ void sendMIDI(byte note, byte velocity, byte channel, int state = 2) {
             MIDI.sendNoteOn(note, velocity, channel);
         }
 
+        delay(200);
+
         if (state == 0 || state == 2) {
             MIDI.sendNoteOff(note, velocity, channel);
         }
     }
 }
 
-void startShow() {
+void startShow(char shownum) {
     /*Keyboard.write(KEY_KP_0);
     delay(500);
     Keyboard.write(KEY_RETURN);
     delay(500);
     Keyboard.write(' ');*/
-    byte note = 1;
-    byte velocity = 1;
-    byte channel = 1;
 
-    sendMIDI(note, velocity, channel);
+    Serial.println("Got number:" + String(shownum));
+
+    digitalWrite(beeper, HIGH);
+
+    switch(shownum) {
+        case '0':  
+            sendMIDI(4, 127, 1);
+            break;
+        
+        case '1':
+            sendMIDI(5, 127, 1);
+            break;
+
+    }
+
+    delay(200);
+    sendMIDI(3, 127, 1);
+    digitalWrite(beeper, LOW);
     return;
 }
 
@@ -82,6 +112,8 @@ void stopRunning() {
     digitalWrite(plug1, HIGH);
     delay(100);
     digitalWrite(plug2, HIGH);
+
+    sendMIDI(1, 127, 1);
     return;
 }
 
@@ -100,26 +132,27 @@ void runPanic() {
     delay(100);
     digitalWrite(plug2, LOW);
 
-    byte note = 2;
-    byte velocity = 1;
-    byte channel = 1;
+    sendMIDI(2, 127, 1);
 
-    sendMIDI(note, velocity, channel);
+    delay(200);
+
+    sendMIDI(3, 127, 1);
     return;
 }
 
 void sendStatus() {
-    if (ethernetStatus == 0 && ignoring.indexOf('b') == -1) {
+    getStatus();
+    if (status == 1) {
         comport.print('b');
         return;
     }
 
-    if (ethernetStatus == 2 && ignoring.indexOf('c') == -1) {
+    if (status == 2) {
         comport.print('c');
         return;
     }
 
-    if (isConnected == 0 && ignoring.indexOf('d') == -1) {
+    if (status == 3) {
         comport.print('d');
         return;
     }
@@ -128,7 +161,62 @@ void sendStatus() {
     return;
 }
 
-void ignoreError(char type) {
+void getStatus() {
+    if (ethernetStatus == 0) {
+        status = 1;
+        return;
+    }
+
+    if (ethernetStatus == 2) {
+        status = 2;
+        return;
+    }
+
+    if (isConnected == 0) {
+        status = 3;
+        numBlink = 0;
+        return;
+    }
+    status = 0;
+    return;
+}
+
+void manageLed() {
+    if (status == 1) {
+        analogWrite(statusLed, 0);
+        return;
+    } else if (status == 0) {
+        if (numBlink < 6) {
+            Serial.println(numBlink);
+            numBlink++;
+            if (numBlink % 2 == 1) {
+                analogWrite(statusLed, 0);
+                digitalWrite(beeper, HIGH);
+            } else {
+                analogWrite(statusLed, 255);
+                digitalWrite(beeper, LOW);
+            }
+        } else {
+            analogWrite(statusLed, 255);
+        }
+        return;
+    }
+
+    currentBrightness = currentBrightness + (dir * 5);
+
+    if (currentBrightness >= 160) {
+        dir = -1;
+        currentBrightness = 160;
+    } else if (currentBrightness <= 0) {
+        dir = 1;
+        currentBrightness = 0;
+    }
+
+    analogWrite(statusLed, currentBrightness);
+    return;
+}
+
+/*void ignoreError(char type) {
     if (ignoring.indexOf(type) == -1) {
         ignoring += String(type);
     }
@@ -147,11 +235,19 @@ void checkIgnore() {
     if (ignoring.indexOf('d') != -1 && isConnected > 0) {
         ignoring.remove(ignoring.indexOf('d'));
     }
-}
+}*/
 
 void loop() {
     if (ethernetStatus != 0) {
         MIDI.read();
+    }
+
+    getStatus();
+
+    if ((millis() - statusLedMillis >= 10 && status == 2) || (millis() - statusLedMillis >= 30 && status == 3) || (status == 1) || (millis() - statusLedMillis >= 600 && status == 0)) {
+        manageLed();
+
+        statusLedMillis = millis();
     }
 
     if (ethernetStatus != 0 && (millis() - maintainMillis) > 500) {
@@ -167,13 +263,17 @@ void loop() {
     if (comport.available()) {
         char readInst = comport.read();
 
+        Serial.println("Got inst: " + String(readInst));
+
         if (readInst == 'a') {
             sendStatus();
-        } else if (readInst == 'i') {
+        } /*else if (readInst == 'i') {
             char readType = comport.read();
             ignoreError(readType);
-        } else if (readInst == 's') {
-            startShow();
+        } */else if (readInst == 's') {
+            delay(100);
+            char readNum = comport.read();
+            startShow(readNum);
         } else if (readInst == 'p') {
             runPanic();
         } else if (readInst == 'r') {
@@ -181,5 +281,14 @@ void loop() {
         }
     }
 
-    checkIgnore();
+    if (Serial.available()) {
+        String notestr = "";
+        while (Serial.available() > 0) {
+            notestr += String((char) Serial.read());
+        }
+
+        byte note = notestr.toInt();
+
+        sendMIDI(note, 127, 1);
+    }
 }
