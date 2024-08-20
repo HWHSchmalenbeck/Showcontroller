@@ -258,13 +258,14 @@ bool connector_check_missed = false;
 /*
  *  Errors:
  *  ?   =>  Globale Panik                                                       (Modul: Showcontroller) (Severity: -2)
- *  !  =>  Partielle Panik                                                     (Modul: Showcontroller) (Severity: -1)
+ *  !   =>  Partielle Panik                                                     (Modul: Showcontroller) (Severity: -1)
  *  a   =>  Ethernet-Verbindung fehlgeschlagen                                  (Modul: Connector)      (Severity: 3)
  *  b   =>  DHCP-Lease-Erneuerung fehlgeschlagen                                (Modul: Connector)      (Severity: 3)
  *  c   =>  Showcontroller ist mit keiner AppleMIDI-Session verbunden           (Modul: Connector)      (Severity: 2)
  *  d   =>  Connector antwortet nicht                                           (Modul: Connector)      (Severity: 2)
  *  e   =>  Erfolgreich mit AppleMIDI-Session verbunden                         (Modul: Connector)      (Severity: 1)
  *  f   =>  Connector antwortet wieder                                          (Modul: Connector)      (Severity: 1)
+ *  g   =>  Kurzschluss bei Button ID: (Activator)                              (Modul: Button)         (Severity: 3)
  * 
 */
 
@@ -1929,6 +1930,15 @@ bool renderMessage(char msgid, int severity, char activator = '0') {
             tft.setCursor(80, 110);
             tft.print("Connector antwortet wieder.");
             break;
+
+        case 'g':
+            tft.setCursor(122, 80);
+            tft.print("Modul: Button");
+
+            tft.setCursor(74, 110);
+            tft.print("Kurzschluss bei einem Button.");
+            break;
+
     }
 
     if (severity == 3) {
@@ -2673,6 +2683,9 @@ void statusCheck()
         }
         else if (gotStatus == 'd' || gotStatus == 'e')
         {
+            if (gotStatus == 'd') {
+                renderMessage('g', 3);
+            }
             hasFailure = true;
         }
     }
