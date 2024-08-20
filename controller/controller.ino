@@ -411,6 +411,7 @@ void sendDebugInterfacePage() {
 
             Serial.println("1: Test Error Messages");
             Serial.println("2: Test Screens");
+            Serial.println("3: Test Inputs");
 
             if (sendDebugMessages == false) {
                 Serial.println("\nD: Enable Debug Messages");
@@ -457,7 +458,27 @@ void sendDebugInterfacePage() {
             Serial.println("4: Area Page 5 (Page ID: 4)");
             Serial.println("5: Area Page 6 (Page ID: 5)");
 
-            Serial.println("\nM: Back to Main Menu");
+            Serial.println("\nT: To Test Inputs Page");
+            Serial.println("M: Back to Main Menu");
+            break;
+        
+        case 4:
+            Serial.println("HWHS Showcontroller Debug Interface\n");
+            Serial.println("Test Inputs\n\n");
+            Serial.println("Make a choice:\n");
+
+            Serial.println("c: Com Disable Button");
+            Serial.println("l: Nav Left Button");
+            Serial.println("e: Nav Enter Button");
+            Serial.println("r: Nav Right Button");
+            Serial.println("h: Home Button");
+            Serial.println("p: Page Button");
+
+            Serial.println("\nP: Panic Button");
+            Serial.println("S: Start Show Button");
+
+            Serial.println("\nT: To Test Screens Page");
+            Serial.println("M: Back to Main Menu");
             break;
     }
 }
@@ -471,6 +492,10 @@ void handleDebugInterfaceInputs(char input) {
             
             case '2':
                 curDebugInterfacePage = 3;
+                break;
+            
+            case '3':
+                curDebugInterfacePage = 4;
                 break;
             
             case 'D':
@@ -518,6 +543,10 @@ void handleDebugInterfaceInputs(char input) {
             
             case 'C':
                 ignoringErrors = "";
+                break;
+
+            case 'T':
+                curDebugInterfacePage = 4;
                 break;
             
             case 'M':
@@ -568,6 +597,48 @@ void handleDebugInterfaceInputs(char input) {
             
             case '5':
                 renderButtonPage(5);
+                break;
+            
+            case 'M':
+                curDebugInterfacePage = 1;
+                break;
+        }
+    } else if (curDebugInterfacePage == 4) {
+        switch (input) {
+            case 'c':
+                handleComLedDisableBtn();
+                break;
+            
+            case 'l':
+                handleNavLeftBtn();
+                break;
+            
+            case 'e':
+                handleNavEnterBtn();
+                break;
+            
+            case 'r':
+                handleNavRightBtn();
+                break;
+            
+            case 'h':
+                handleHomeBtn();
+                break;
+            
+            case 'p':
+                handlePageBtn();
+                break;
+            
+            case 'P':
+                handleCrisisBtn();
+                break;
+            
+            case 'S':
+                handleStartBtn();
+                break;
+            
+            case 'T':
+                curDebugInterfacePage = 3;
                 break;
             
             case 'M':
