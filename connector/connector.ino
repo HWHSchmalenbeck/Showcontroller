@@ -30,6 +30,11 @@ unsigned long maintainMillis = 0;
 
 int status = 0;
 
+int wrongInst = 0;
+bool sentCurWrongInst = true;
+unsigned long wrongInstResetTimer = 0;
+int wrongInstResetThreshold = 300000;
+
 APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
 
 SoftwareSerial comport(3, 2);
@@ -157,6 +162,12 @@ void sendStatus() {
         return;
     }
 
+    if (sentCurWrongInst == false || wrongInst == 5) {
+        comport.print(String(wrongInst));
+        sentCurWrongInst = true;
+        return;
+    }
+
     comport.print('a');
     return;
 }
@@ -260,6 +271,12 @@ void loop() {
         }
     }
 
+    if (millis() - wrongInstResetTimer >= wrongInstResetThreshold && wrongInst != 5) {
+        wrongInst = 0;
+        sentCurWrongInst = true;
+        wrongInstResetTimer = 0;
+    }
+
     if (comport.available()) {
         char readInst = comport.read();
 
@@ -273,7 +290,16 @@ void loop() {
         } */else if (readInst == 's') {
             delay(100);
             char readNum = comport.read();
-            startShow(readNum);
+            if (readNum-'0' <= 9 && readNum-'0' >= 0) {
+                wrongInst++;
+                if (wrongInst > 5) {
+                    wrongInst = 5;
+                }
+                sentCurWrongInst = false;
+                wrongInstResetTimer = millis();
+            } else {
+                startShow(readNum);
+            }
         } else if (readInst == 'p') {
             runPanic();
         } else if (readInst == 'r') {

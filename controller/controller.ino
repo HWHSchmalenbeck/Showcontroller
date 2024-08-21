@@ -266,6 +266,9 @@ bool connector_check_missed = false;
  *  e   =>  Erfolgreich mit AppleMIDI-Session verbunden                         (Modul: Connector)      (Severity: 1)
  *  f   =>  Connector antwortet wieder                                          (Modul: Connector)      (Severity: 1)
  *  g   =>  Kurzschluss bei Button ID: (Activator)                              (Modul: Button)         (Severity: 3)
+ *  h   =>  Fehlerhafte Befehlsgabe 1-4                                         (Modul: Connector)      (Severity: 2)
+ *  i   =>  Fehlerhafte Befehlsgabe 5                                           (Modul: Connector)      (Severity: 3)
+ *  j   =>  Kein Show Type aktiv                                                (Modul: Showcontroller) (Severity: 3)
  * 
 */
 
@@ -426,12 +429,16 @@ void sendDebugInterfacePage() {
             Serial.println("Test Error Messages\n\n");
             Serial.println("Make a choice:\n");
 
-            Serial.println("1: Ethernet-Verbindung konnte nicht hergestellt werden. [Connector] (ID: 1)");
-            Serial.println("2: DHCP-Lease-Erneuerung ist fehlgeschlagen. [Connector] (ID: 2)");
-            Serial.println("3: Showcontroller ist mit keiner AppleMIDI-Session verbunden. [Connector] (ID: 3)");
-            Serial.println("4: Connector antwortet nicht. [Connector] (ID: 4)");
-            Serial.println("5: Erfolgreich mit AppleMIDI-Session verbunden. [Connector] (ID: 5)");
-            Serial.println("6: Connector antwortet wieder. [Connector] (ID: 6)");
+            Serial.println("a: Ethernet-Verbindung konnte nicht hergestellt werden. [Connector] (ID: a)");
+            Serial.println("b: DHCP-Lease-Erneuerung ist fehlgeschlagen. [Connector] (ID: b)");
+            Serial.println("c: Showcontroller ist mit keiner AppleMIDI-Session verbunden. [Connector] (ID: c)");
+            Serial.println("d: Connector antwortet nicht. [Connector] (ID: d)");
+            Serial.println("e: Erfolgreich mit AppleMIDI-Session verbunden. [Connector] (ID: e)");
+            Serial.println("f: Connector antwortet wieder. [Connector] (ID: f)");
+            Serial.println("g: Kurzschluss bei Button ID: [Connector] (ID: g)");
+            Serial.println("h: Fehlerhafte Befehlsgabe 1-4. [Connector] (ID: h)");
+            Serial.println("i: Fehlerhafte Befehlsgabe 5 [Connector] (ID: i)");
+            Serial.println("j: Kein Show Type aktiv [Showcontroller] (ID: j)");
 
             Serial.println("\n!: Partieller Panik-Modus");
             Serial.println("?: Globaler Panik-Modus");
@@ -510,28 +517,44 @@ void handleDebugInterfaceInputs(char input) {
         }
     } else if (curDebugInterfacePage == 2) {
         switch (input) {
-            case '1':
+            case 'a':
                 renderMessage('a', 3);
                 break;
             
-            case '2':
+            case 'b':
                 renderMessage('b', 3);
                 break;
             
-            case '3':
+            case 'c':
                 renderMessage('c', 2);
                 break;
             
-            case '4':
+            case 'd':
                 renderMessage('d', 2);
                 break;
             
-            case '5':
+            case 'e':
                 renderMessage('e', 1);
                 break;
             
-            case '6':
+            case 'f':
                 renderMessage('f', 1);
+                break;
+            
+            case 'g':
+                renderMessage('g', 3, 'A');
+                break;
+            
+            case 'h':
+                renderMessage('h', 2, '1');
+                break;
+            
+            case 'i':
+                renderMessage('i', 3, '5');
+                break;
+            
+            case 'j':
+                renderMessage('j', 3);
                 break;
 
             case '!':
@@ -799,15 +822,23 @@ void startShow()
         curShowType = 0;
     }
 
+    int i = 0;
+
     while (showTypes[curShowType] == false) {
         sendSerialMessage(String(curShowType) + ":" + String(showTypes[curShowType]));
         curShowType++;
+        i++;
 
         if (curShowType > sizeof(showTypes)-1) {
             curShowType = 0;
         }
-    }
 
+        if (i >= sizeof(showTypes)) {
+            sendSerialMessage("Error: No Show Type active");
+            renderMessage('j', 3);
+            return;
+        }
+    }
     sendSerialMessage("Chosen:" + String(curShowType) + ":" + String(showTypes[curShowType]));
 
     Serial2.print('s');
@@ -1938,7 +1969,30 @@ bool renderMessage(char msgid, int severity, char activator = '0') {
             tft.setCursor(74, 110);
             tft.print("Kurzschluss bei einem Button.");
             break;
+        
+        case 'h':
+            tft.setCursor(114, 80);
+            tft.print("Modul: Connector");
 
+            tft.setCursor(90, 100);
+            tft.print("Fehlerhafte Befehlsgabe");
+
+            tft.setTextSize(2);
+            tft.setCursor(142, 120);
+            tft.print(String(activator) + "/5");
+            break;
+        
+        case 'i':
+            tft.setCursor(114, 80);
+            tft.print("Modul: Connector");
+
+            tft.setCursor(90, 100);
+            tft.print("Fehlerhafte Befehlsgabe");
+            break;
+        
+        case 'j':
+            //TODO: Modul Showcontroller (Kein Show Type ist aktiv)
+            break;
     }
 
     if (severity == 3) {
@@ -3081,6 +3135,20 @@ void checkConnector() {
                 if (ignoringErrors.indexOf('e') != -1) {
                     ignoringErrors.remove(ignoringErrors.indexOf('e'));
                 }
+                break;
+            
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+                if (ignoringErrors.indexOf('h') != -1) {
+                    ignoringErrors.remove(ignoringErrors.indexOf('h'));
+                }
+                renderMessage('h', 2, readResponse);
+                break;
+            
+            case '5':
+                renderMessage('i', 3, '5');
                 break;
             
             default:
