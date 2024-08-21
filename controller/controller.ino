@@ -280,7 +280,10 @@ bool errorColored = true;
 
 // Show types
 
-bool showTypes[6] = {true, true, true, true, true, true};
+bool showTypes[10] = {
+    true, true, true, true, true,
+    true, false, false, false, false
+    };
 
 // Debug interface handling
 
@@ -916,22 +919,34 @@ void renderSelection(int id, bool negative = false)
         switch (id)
         {
             case 1:
-                tft.drawRect(16, 66, 144, 38, selectionColor);
+                tft.drawRect(16, 56, 144, 30, selectionColor);
                 return;
             case 2:
-                tft.drawRect(166, 66, 144, 38, selectionColor);
+                tft.drawRect(166, 56, 144, 30, selectionColor);
                 return;
             case 3:
-                tft.drawRect(16, 116, 144, 38, selectionColor);
+                tft.drawRect(16, 90, 144, 30, selectionColor);
                 return;
             case 4:
-                tft.drawRect(166, 116, 144, 38, selectionColor);
+                tft.drawRect(166, 90, 144, 30, selectionColor);
                 return;
             case 5:
-                tft.drawRect(16, 166, 144, 38, selectionColor);
+                tft.drawRect(16, 124, 144, 30, selectionColor);
                 return;
             case 6:
-                tft.drawRect(166, 166, 144, 38, selectionColor);
+                tft.drawRect(166, 124, 144, 30, selectionColor);
+                return;
+            case 7:
+                tft.drawRect(16, 158, 144, 30, selectionColor);
+                return;
+            case 8:
+                tft.drawRect(166, 158, 144, 30, selectionColor);
+                return;
+            case 9:
+                tft.drawRect(16, 192, 144, 30, selectionColor);
+                return;
+            case 10:
+                tft.drawRect(166, 192, 144, 30, selectionColor);
                 return;
         }
     }
@@ -1153,6 +1168,7 @@ void handleSelection(char act, int dir = 0)
     int btnPageSelectMax = 3;
     int homePageSelectMax = 6;
     int settingsPageSelectMax = 4;
+    int settingsShowTypesSelectMax = 10;
 
     if (act == 'u')
     {
@@ -1296,9 +1312,13 @@ void handleSelection(char act, int dir = 0)
     {
         maxSelection = settingsPageSelectMax;
     }
-    else if (curPage == -1 || curPage == -5)
+    else if (curPage == -1)
     {
         maxSelection = homePageSelectMax;
+    }
+    else if (curPage == -5)
+    {
+        maxSelection = settingsShowTypesSelectMax;
     }
     else if (curPage >= 0 && curPage <= 5)
     {
@@ -1570,93 +1590,123 @@ void renderSettingsShowTypes() {
     tft.setTextSize(2);
 
     // Basic
-    tft.drawRect(20, 70, 30, 30, LCD_BLACK);
-    tft.drawRect(21, 71, 28, 28, LCD_BLACK);
-    tft.setCursor(60, 78);
+    tft.drawRect(20, 60, 22, 22, LCD_BLACK);
+    tft.drawRect(21, 61, 20, 20, LCD_BLACK);
+    tft.setCursor(54, 64);
     tft.print("Show 1");
 
     // Chosen
     if (showTypes[0] == true) {
-        tft.fillRect(24, 74, 22, 22, LCD_BLACK);
+        tft.fillRect(24, 64, 14, 14, LCD_BLACK);
     }
-
-    // Selection
-    tft.drawRect(16, 66, 144, 38, LCD_RED);
 
 
     // Basic
-    tft.drawRect(170, 70, 30, 30, LCD_BLACK);
-    tft.drawRect(171, 71, 28, 28, LCD_BLACK);
-    tft.setCursor(210, 78);
+    tft.drawRect(170, 60, 22, 22, LCD_BLACK);
+    tft.drawRect(171, 61, 20, 20, LCD_BLACK);
+    tft.setCursor(204, 64);
     tft.print("Show 2");
 
     // Chosen
     if (showTypes[1] == true) {
-        tft.fillRect(174, 74, 22, 22, LCD_BLACK);
+        tft.fillRect(174, 64, 14, 14, LCD_BLACK);
     }
-
-    // Selection
-    tft.drawRect(166, 66, 144, 38, LCD_RED);
 
 
     // Basic
-    tft.drawRect(20, 120, 30, 30, LCD_BLACK);
-    tft.drawRect(21, 121, 28, 28, LCD_BLACK);
-    tft.setCursor(60, 128);
+    tft.drawRect(20, 94, 22, 22, LCD_BLACK);
+    tft.drawRect(21, 95, 20, 20, LCD_BLACK);
+    tft.setCursor(54, 98);
     tft.print("Show 3");
 
     // Chosen
     if (showTypes[2] == true) {
-        tft.fillRect(24, 124, 22, 22, LCD_BLACK);
+        tft.fillRect(24, 98, 14, 14, LCD_BLACK);
     }
-
-    // Selection
-    tft.drawRect(16, 116, 144, 38, LCD_RED);
 
 
     // Basic
-    tft.drawRect(170, 120, 30, 30, LCD_BLACK);
-    tft.drawRect(171, 121, 28, 28, LCD_BLACK);
-    tft.setCursor(210, 128);
+    tft.drawRect(170, 94, 22, 22, LCD_BLACK);
+    tft.drawRect(171, 95, 20, 20, LCD_BLACK);
+    tft.setCursor(204, 98);
     tft.print("Show 4");
 
     // Chosen
     if (showTypes[3] == true) {
-        tft.fillRect(174, 124, 22, 22, LCD_BLACK);
+        tft.fillRect(174, 98, 14, 14, LCD_BLACK);
     }
-
-    // Selection
-    tft.drawRect(166, 116, 144, 38, LCD_RED);
 
 
     // Basic
-    tft.drawRect(20, 170, 30, 30, LCD_BLACK);
-    tft.drawRect(21, 171, 28, 28, LCD_BLACK);
-    tft.setCursor(60, 178);
+    tft.drawRect(20, 128, 22, 22, LCD_BLACK);
+    tft.drawRect(21, 129, 20, 20, LCD_BLACK);
+    tft.setCursor(54, 132);
     tft.print("Show 5");
 
     // Chosen
     if (showTypes[4] == true) {
-        tft.fillRect(24, 174, 22, 22, LCD_BLACK);
+        tft.fillRect(24, 132, 14, 14, LCD_BLACK);
     }
-
-    // Selection
-    tft.drawRect(16, 166, 144, 38, LCD_RED);
 
 
     // Basic
-    tft.drawRect(170, 170, 30, 30, LCD_BLACK);
-    tft.drawRect(171, 171, 28, 28, LCD_BLACK);
-    tft.setCursor(210, 178);
+    tft.drawRect(170, 128, 22, 22, LCD_BLACK);
+    tft.drawRect(171, 129, 20, 20, LCD_BLACK);
+    tft.setCursor(204, 132);
     tft.print("Show 6");
 
     // Chosen
     if (showTypes[5] == true) {
-        tft.fillRect(174, 174, 22, 22, LCD_BLACK);
+        tft.fillRect(174, 132, 14, 14, LCD_BLACK);
     }
 
-    // Selection
-    tft.drawRect(166, 166, 144, 38, LCD_RED);
+
+    // Basic
+    tft.drawRect(20, 162, 22, 22, LCD_BLACK);
+    tft.drawRect(21, 163, 20, 20, LCD_BLACK);
+    tft.setCursor(54, 166);
+    tft.print("Show 7");
+
+    // Chosen
+    if (showTypes[6] == true) {
+        tft.fillRect(24, 166, 14, 14, LCD_BLACK);
+    }
+
+
+    // Basic
+    tft.drawRect(170, 162, 22, 22, LCD_BLACK);
+    tft.drawRect(171, 163, 20, 20, LCD_BLACK);
+    tft.setCursor(204, 166);
+    tft.print("Show 8");
+
+    // Chosen
+    if (showTypes[7] == true) {
+        tft.fillRect(174, 166, 14, 14, LCD_BLACK);
+    }
+
+
+    // Basic
+    tft.drawRect(20, 196, 22, 22, LCD_BLACK);
+    tft.drawRect(21, 197, 20, 20, LCD_BLACK);
+    tft.setCursor(54, 200);
+    tft.print("Show 9");
+
+    // Chosen
+    if (showTypes[8] == true) {
+        tft.fillRect(24, 200, 14, 14, LCD_BLACK);
+    }
+
+
+    // Basic
+    tft.drawRect(170, 196, 22, 22, LCD_BLACK);
+    tft.drawRect(171, 197, 20, 20, LCD_BLACK);
+    tft.setCursor(204, 200);
+    tft.print("Show 10");
+
+    // Chosen
+    if (showTypes[9] == true) {
+        tft.fillRect(174, 200, 14, 14, LCD_BLACK);
+    }
 
     return;
 }
