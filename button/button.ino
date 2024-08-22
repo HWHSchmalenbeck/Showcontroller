@@ -44,6 +44,8 @@ int durBlinkColor = 500;
  *   c   ->  (c)risis [color = PINK (blink 1)]
  *   d   ->  (d)auerhaft gedrückt (falls bei Start HIGH) [color = ORANGE (blink 2)]
  *   e   ->  (e)wig nicht gedrückt (sobald gestartet und noch net gedrückt) [color = YELLOW (blink 3)]
+ *   k   ->  (k)eine verbindung zum master [color = RED (blink 4)]
+ *   p   ->  (p)artieller panik modus [color = BLUE (blink 6)]
  *
  */
 
@@ -247,6 +249,12 @@ void handleBlink()
             // DEBUG
             // Serial.println("Blinking Green");
             break;
+        case 6:
+            setBtnColor(BLUE);
+
+            // DEBUG
+            // Serial.println("Blinking Blue");
+            break;
         }
         blinkState = true;
     }
@@ -368,9 +376,28 @@ void loop()
                     Serial.println("Disregarding blink pink instructions because already blinking pink");
                 }
 
-                // RESET
+                
             }
-            else if (readinst == 'r')
+            else if (readinst == 'd') // Partial crisis mode
+            {
+                if (curStatus != 'p')
+                {
+                    if (blinkType != 6) {
+                        Serial.println("Blinking blue due to partial crisis mode of other buttons");
+
+                        blinkType = 6;
+                        blinkMillis = 0;
+                        partyActive = false;
+                        curStatus = 'a';
+                        setBtnColor(BLUE);
+                    } else {
+                        Serial.println("Disregarding blink blue because button is already blinking blue");
+                    }
+                } else {
+                    Serial.println("Disregarding blink blue because button initiated partial crisis");
+                }
+            }
+            else if (readinst == 'r') // RESET
             {
 
                 // DEBUG
